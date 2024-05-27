@@ -176,6 +176,14 @@ In a test on a website with 1763 files, Aurora built the website in `0:00:04.23`
 
 The files were a combination of blog posts, static pages, and programmatic archives for blog posts (date pages, category pages).
 
+## Users
+
+The following sites are built with Aurora:
+
+- [James' Coffee Blog](https://jamesg.blog) (1,500+ pages)
+
+Have you made a website with Aurora? File a PR and add it to the list!
+
 ## License
 
 This project is licensed under an [MIT license](LICENSE).
