@@ -172,7 +172,9 @@ REGISTERED_HOOKS = {
 
 ## Performance
 
-TODO
+In a test on a website with 1763 files, Aurora built the website in `0:00:04.23`.
+
+The files were a combination of blog posts, static pages, and programmatic archives for blog posts (date pages, category pages).
 
 ## License
 
