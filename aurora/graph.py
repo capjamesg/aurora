@@ -8,12 +8,13 @@ import datetime
 import re
 import time
 
+import orjson
 import pyromark
+import tqdm
 from frontmatter import loads
-from jinja2 import (Environment, FileSystemLoader, Template, environment,
-                    exceptions, meta, nodes)
+from jinja2 import (Environment, FileSystemBytecodeCache, FileSystemLoader,
+                    Template, meta, nodes)
 from jinja2.visitor import NodeVisitor
-from progress.bar import IncrementalBar
 from toposort import toposort, toposort_flatten
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
@@ -27,6 +28,8 @@ sys.path.append(module_dir)
 
 from config import (BASE_URL, LAYOUTS_BASE_DIR, REGISTERED_HOOKS, ROOT_DIR,
                     SITE_DIR, SITE_ENV)
+
+DATA_FILES_DIR = os.path.join(ROOT_DIR, "_data")
 
 for hook in REGISTERED_HOOKS:
     REGISTERED_HOOKS[hook] = [
@@ -50,7 +53,11 @@ else:
         for file in files:
             os.remove(os.path.join(root, file))
 
-JINJA2_ENV = Environment(loader=FileSystemLoader(ROOT_DIR), cache_size=2000)
+JINJA2_ENV = Environment(
+    loader=FileSystemLoader(ROOT_DIR), bytecode_cache=FileSystemBytecodeCache()
+)
+
+state_to_write = {}
 
 
 def slugify(value: str) -> str:
@@ -104,6 +111,13 @@ JINJA2_ENV.filters["month_number_to_written_month"] = month_number_to_written_mo
 
 ALLOWED_EXTENSIONS = ["html", "md", "css", "js", "txt", "xml"]
 
+all_data_files = {}
+
+for file in os.listdir(DATA_FILES_DIR):
+    with open(os.path.join(DATA_FILES_DIR, file), "r") as f:
+        all_data_files[file] = orjson.loads(f.read())
+        state[file.replace(".orjson", "")] = all_data_files[file]
+
 all_pages = []
 
 for root, dirs, files in os.walk(ROOT_DIR):
@@ -127,10 +141,20 @@ for page in all_pages:
                 all_opened_pages[page] = JINJA2_ENV.from_string(contents)
 
             all_page_contents[page] = loads(contents)
-        except:
+        except Exception as e:
             print(f"Error reading {page}")
             pass
 
+for data_file in all_data_files:
+    data_dir = data_file.replace(".json", "")
+    for record in all_data_files[data_file]:
+        contents = "---\n" + orjson.dumps(record).decode() + "\n---\n"
+        all_opened_pages[os.path.join(ROOT_DIR, data_dir, record.get("slug"))] = (
+            JINJA2_ENV.from_string(contents)
+        )
+        all_page_contents[os.path.join(ROOT_DIR, data_dir, record.get("slug"))] = loads(
+            contents
+        )
 
 all_dependencies = {}
 all_parsed_pages = {}
@@ -177,12 +201,13 @@ def get_file_dependencies_and_evaluated_contents(
     parsed_content = all_page_contents[file_name]
 
     parsed_content["slug"] = file_name.split("/")[-1].replace(".html", "")
+    parsed_content["contents"] = pyromark.markdown(parsed_content.content)
 
     parsed_content["url"] = f"{BASE_URL}/{file_name.replace(ROOT_DIR + '/posts/', '')}"
+    
     if "categories" not in parsed_content:
         parsed_content["categories"] = []
-    # slug = parsed_content.get("slug")
-    # extract date slug w/ regex
+
     slug = file_name.split("/")[-1].replace(".html", "")
 
     slug = slug.replace("posts/", "")
@@ -218,6 +243,12 @@ def get_file_dependencies_and_evaluated_contents(
                 parsed_content["description"] = pyromark.markdown(
                     parsed_content.content.split("\n")[0]
                 )
+            date_slug = date_slug.replace("-", "/")
+            slug_without_date = re.sub(r"\d{4}-\d{2}-\d{2}-", "", slug)
+
+            parsed_content["url"] = (
+                f"{BASE_URL}/{date_slug}/{slug_without_date.replace('.html', '').replace('.md', '')}/"
+            )
 
     if "layout" in parsed_content:
         dependencies.add(
@@ -441,12 +472,7 @@ def render_page(file: str) -> None:
 
     permalink = os.path.join(SITE_DIR, permalink)
 
-    try:
-        with open(permalink, "w") as f:
-            f.write(rendered)
-    except Exception as e:
-        print(f"Error writing {permalink}")
-        print(e)
+    state_to_write[permalink] = rendered
 
     state["pages"].append({"url": f"{BASE_URL}/{permalink}", "file": file})
 
@@ -527,9 +553,10 @@ def process_date_archives() -> None:
                     os.path.join(
                         SITE_DIR, str(year), str(month), str(day), "index.html"
                     ),
-                    "w",
+                    "wb",
+                    buffering=500,
                 ) as f:
-                    f.write(rendered_page)
+                    f.write(rendered_page.encode())
 
 
 def process_category_archives():
@@ -572,8 +599,10 @@ def process_category_archives():
             rendered_page,
         )
 
-        with open(os.path.join(SITE_DIR, slugify(category), "index.html"), "w") as f:
-            f.write(rendered_page)
+        with open(
+            os.path.join(SITE_DIR, slugify(category), "index.html"), "wb", buffering=500
+        ) as f:
+            f.write(rendered_page.encode())
 
 
 def main(deps: list = None, watch: bool = False) -> None:
@@ -594,16 +623,17 @@ def main(deps: list = None, watch: bool = False) -> None:
         if not dependency.startswith("pages/_")
     ]
 
-    for file in IncrementalBar("Building website...").iter(dependencies):
-        if not os.path.exists(file):
-            continue
-
+    for file in tqdm.tqdm(dependencies):
         if os.path.isdir(file):
             for root, dirs, files in os.walk(file):
                 for file in files:
                     render_page(os.path.join(root, file))
         else:
             render_page(file)
+
+    for file in state_to_write:
+        with open(file, "wb", buffering=1000) as f:
+            f.write(state_to_write[file].encode())
 
     process_date_archives()
     process_category_archives()
