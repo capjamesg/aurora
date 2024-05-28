@@ -16,7 +16,7 @@ setuptools.setup(
     version=version,
     author="capjamesg",
     author_email="readers@jamesg.blog",
-    description="A fast static site generator for Python.",
+    description="A fast static site generator implemented in Python.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/capjamesg/aurora",
@@ -28,8 +28,8 @@ setuptools.setup(
         "python-frontmatter",
         "requests",
         "progress",
+        "click",
     ],
-    # allow models.csv in package
     include_package_data=True,
     package_data={"": ["models.csv"]},
     packages=find_packages(exclude=("tests",)),

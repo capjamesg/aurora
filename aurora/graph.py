@@ -5,14 +5,13 @@ if not os.path.exists("config.py"):
     raise Exception("config.py not found")
 
 import datetime
-import optparse
 import re
 import time
 
 import pyromark
 from frontmatter import loads
-from jinja2 import (Environment, FileSystemLoader, environment, exceptions,
-                    meta, nodes)
+from jinja2 import (Environment, FileSystemLoader, Template, environment,
+                    exceptions, meta, nodes)
 from jinja2.visitor import NodeVisitor
 from progress.bar import IncrementalBar
 from toposort import toposort, toposort_flatten
@@ -24,23 +23,22 @@ from .date_helpers import (archive_date, date_to_xml_string, list_archive_date,
 
 module_dir = os.getcwd()
 os.chdir(module_dir)
-# add to path
 sys.path.append(module_dir)
+
 from config import (BASE_URL, LAYOUTS_BASE_DIR, REGISTERED_HOOKS, ROOT_DIR,
                     SITE_DIR, SITE_ENV)
 
-# for hook in registered hook, get all funcs
 for hook in REGISTERED_HOOKS:
     REGISTERED_HOOKS[hook] = [
         getattr(__import__(hook), func) for func in REGISTERED_HOOKS[hook]
     ]
 
-# get date of today w/ no time
 today = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 state = {
     "posts": [],
     "site": {"root_url": BASE_URL},
     "build_date": today.strftime("%m-%d"),
+    "pages": [],
 }
 start = datetime.datetime.now()
 
@@ -55,11 +53,29 @@ else:
 JINJA2_ENV = Environment(loader=FileSystemLoader(ROOT_DIR), cache_size=2000)
 
 
-def slugify(value):
+def slugify(value: str) -> str:
+    """
+    Turn a string into a slug for use in saving data to a file.
+    """
     return value.lower().replace(" ", "-")
 
 
+class Watcher(FileSystemEventHandler):
+    def on_modified(self, event):
+        print(f"Detected change in {event.src_path}. Rebuilding.")
+        file_name = event.src_path
+        file_name = file_name.replace(os.getcwd() + "/", "")
+        file_dependencies = all_dependencies[file_name]
+        file_dependencies.add(file_name)
+
+        main(deps=file_dependencies)
+
+
 class VariableVisitor(NodeVisitor):
+    """
+    Find all variables in a jinja2 template.
+    """
+
     def __init__(self):
         self.variables = set()
 
@@ -86,21 +102,31 @@ JINJA2_ENV.filters["archive_date"] = archive_date
 JINJA2_ENV.filters["list_archive_date"] = list_archive_date
 JINJA2_ENV.filters["month_number_to_written_month"] = month_number_to_written_month
 
+ALLOWED_EXTENSIONS = ["html", "md", "css", "js", "txt", "xml"]
+
 all_pages = []
 
 for root, dirs, files in os.walk(ROOT_DIR):
     for file in files:
+        ext = os.path.splitext(file)[-1].replace(".", "")
+        if ext not in ALLOWED_EXTENSIONS:
+            continue
+
         all_pages.append(os.path.join(root, file))
 
 all_opened_pages = {}
+all_page_contents = {}
 
 for page in all_pages:
     with open(page, "r") as f:
+        contents = f.read()
         try:
             if page.endswith(".md"):
-                all_opened_pages[page] = f.read()
+                all_opened_pages[page] = contents
             else:
-                all_opened_pages[page] = JINJA2_ENV.from_string(f.read())
+                all_opened_pages[page] = JINJA2_ENV.from_string(contents)
+
+            all_page_contents[page] = loads(contents)
         except:
             print(f"Error reading {page}")
             pass
@@ -110,13 +136,16 @@ all_dependencies = {}
 all_parsed_pages = {}
 
 
-def get_file_dependencies_and_evaluated_contents(file_name, contents):
-    if isinstance(contents, str):
-        template = JINJA2_ENV.parse(contents)
-    else:
-        # TODO: Make this more efficient
-        with open(file_name, "r") as f:
-            template = JINJA2_ENV.parse(f.read())
+def get_file_dependencies_and_evaluated_contents(
+    file_name: str, contents: Template
+) -> tuple:
+    """
+    Get all dependencies of a file. Dependencies are:
+
+    1. Other files that are included in the file, and;
+    2. Variables whose values are defined by the site generator (i.e. `site.*`).
+    """
+    template = JINJA2_ENV.parse(contents)
 
     includes = []
     included_variables = []
@@ -145,90 +174,59 @@ def get_file_dependencies_and_evaluated_contents(file_name, contents):
         variable = variable.replace("site.", "")
         dependencies.add(f"{ROOT_DIR}/{variable}")
 
-    parsed_content = None
+    parsed_content = all_page_contents[file_name]
 
-    rendered_template = contents
+    parsed_content["slug"] = file_name.split("/")[-1].replace(".html", "")
 
-    try:
-        if (
-            isinstance(rendered_template, environment.Template)
-            and not file_name.startswith("pages/_layouts")
-            and not file_name.startswith("pages/_includes")
-            and not file_name.startswith("pages/templates")
-        ):
-            state["categories"] = []
-            state["stream"] = []
-            rendered_template = rendered_template.render(page=state, site=state)
-        else:
-            # open file and render
-            with open(file_name, "r") as f:
-                rendered_template = f.read()
+    parsed_content["url"] = f"{BASE_URL}/{file_name.replace(ROOT_DIR + '/posts/', '')}"
+    if "categories" not in parsed_content:
+        parsed_content["categories"] = []
+    # slug = parsed_content.get("slug")
+    # extract date slug w/ regex
+    slug = file_name.split("/")[-1].replace(".html", "")
 
-        parsed_content = loads(rendered_template)
-        parsed_content["slug"] = file_name.split("/")[-1].replace(".html", "")
-        # if no categories, add
-        # ADD ROOT URL
-        parsed_content["contents"] = pyromark.markdown(parsed_content.content)
-        parsed_content[
-            "url"
-        ] = f"{BASE_URL}/{file_name.replace(ROOT_DIR + '/posts/', '')}"
-        if "categories" not in parsed_content:
-            parsed_content["categories"] = []
-        # slug = parsed_content.get("slug")
-        # extract date slug w/ regex
-        slug = file_name.split("/")[-1].replace(".html", "")
+    slug = slug.replace("posts/", "")
 
-        slug = slug.replace("posts/", "")
+    if slug[0].isdigit():
+        date_slug = re.search(r"\d{4}-\d{2}-\d{2}", slug)
 
-        if slug:
-            date_slug = re.search(r"\d{4}-\d{2}-\d{2}", slug)
-            if date_slug:
-                # print(date_slug)
-                date_slug = date_slug.group(0)
-                if not parsed_content.get("post"):
-                    parsed_content["post"] = {}
-                if not parsed_content.get("page"):
-                    parsed_content["page"] = {}
-                parsed_content["post"]["date"] = datetime.datetime.strptime(
-                    date_slug, "%Y-%m-%d"
-                )
-                # date_without_year
-                parsed_content["post"]["date_without_year"] = parsed_content["post"][
-                    "date"
-                ].strftime("%m-%d")
-                parsed_content["date_without_year"] = parsed_content["post"][
-                    "date_without_year"
-                ]
-
-                parsed_content["post"]["full_date"] = parsed_content["post"][
-                    "date"
-                ].strftime("%B %d, %Y")
-                parsed_content["date"] = parsed_content["post"]["date"]
-                # add page.date
-                parsed_content["page"]["date"] = parsed_content["post"]["date"]
-                # add description
-                if "description" not in parsed_content:
-                    parsed_content["description"] = pyromark.markdown(
-                        parsed_content.content.split("\n")[0]
-                    )
-
-        if "layout" in parsed_content:
-            dependencies.add(
-                f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/{parsed_content['layout']}.html"
+        if date_slug:
+            date_slug = date_slug.group(0)
+            if not parsed_content.get("post"):
+                parsed_content["post"] = {}
+            if not parsed_content.get("page"):
+                parsed_content["page"] = {}
+            parsed_content["post"]["date"] = datetime.datetime.strptime(
+                date_slug, "%Y-%m-%d"
             )
-            # if layout is post, add to state global
-            # if parsed_content["layout"] == "post":
-            if not state.get(parsed_content["layout"] + "s"):
-                state[parsed_content["layout"] + "s"] = []
 
-            state[parsed_content["layout"] + "s"].append(parsed_content)
-    except exceptions.UndefinedError as e:
-        raise e
-    except Exception as e:
-        # raise e
-        print(f"Error parsing {file_name}")
-        pass
+            parsed_content["post"]["date_without_year"] = parsed_content["post"][
+                "date"
+            ].strftime("%m-%d")
+            parsed_content["date_without_year"] = parsed_content["post"][
+                "date_without_year"
+            ]
 
+            parsed_content["post"]["full_date"] = parsed_content["post"][
+                "date"
+            ].strftime("%B %d, %Y")
+            parsed_content["date"] = parsed_content["post"]["date"]
+
+            parsed_content["page"]["date"] = parsed_content["post"]["date"]
+
+            if "description" not in parsed_content:
+                parsed_content["description"] = pyromark.markdown(
+                    parsed_content.content.split("\n")[0]
+                )
+
+    if "layout" in parsed_content:
+        dependencies.add(
+            f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/{parsed_content['layout']}.html"
+        )
+        if not state.get(parsed_content["layout"] + "s"):
+            state[parsed_content["layout"] + "s"] = []
+
+        state[parsed_content["layout"] + "s"].append(parsed_content)
     return dependencies, parsed_content
 
 
@@ -244,7 +242,6 @@ for page, contents in all_opened_pages.items():
 
 posts = [key for key in all_opened_pages.keys() if key.startswith(ROOT_DIR + "/posts")]
 
-# get all dates
 dates = set()
 years = {}
 
@@ -266,7 +263,6 @@ for post in posts:
 state["years"] = years
 
 state["posts"] = sorted(
-    # sort by file name
     state["posts"],
     key=lambda x: x["slug"],
     reverse=True,
@@ -281,25 +277,42 @@ def make_any_nonexistent_directories(path):
         os.makedirs(path)
 
 
-# this needs to be a recursive function that builds up the page template
-# every page has a --- front matter block with a layout key
-# the layout key is the name of the layout to use
-# the layout is a jinja2 template that is in _layouts
-# the layout is rendered with the page content as the content variable
-# this needs to happen recursively until there is no layout key in the front matter
 def recursively_build_page_template_with_front_matter(
-    front_matter, state, current_contents=""
+    front_matter: dict, state: dict, current_contents: str = ""
 ):
+    """
+    Recursively build a page template with front matter.
+
+    This function is called recursively until there is no layout key in the front matter.
+    """
+
     if front_matter and "layout" in front_matter.metadata:
         layout = front_matter.metadata["layout"]
         layout_path = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/{layout}.html"
+
+        page_fm = type(
+            "Page", (object,), front_matter.metadata.get("page", front_matter.metadata)
+        )()
+
         current_contents = loads(
             all_opened_pages[layout_path].render(
-                state, content=current_contents, page=front_matter.metadata
+                page=page_fm,
+                site=state,
+                content=current_contents,
+                post=front_matter.metadata,
             )
         ).content
 
         layout_front_matter = all_parsed_pages[layout_path]
+
+        # combine current front matter so that we can access it in the layout
+        if "page" in layout_front_matter.metadata:
+            layout_front_matter["page"] = {
+                **layout_front_matter.metadata["page"],
+                **front_matter.metadata,
+            }
+        else:
+            layout_front_matter["page"] = front_matter.metadata
 
         return recursively_build_page_template_with_front_matter(
             layout_front_matter, state, current_contents.strip()
@@ -308,14 +321,15 @@ def recursively_build_page_template_with_front_matter(
     return current_contents
 
 
-def render_page(file):
+def render_page(file: str) -> None:
+    """
+    Render a page with the Aurora static site generator.
+    """
     try:
         contents = all_opened_pages[file]
     except:
         print(f"Error reading {file}")
         return
-
-    # print(f"Rendering {file}")
 
     page_state = state.copy()
 
@@ -324,15 +338,14 @@ def render_page(file):
 
         slug = slug.replace("posts/", "")
 
-        # print(all_parsed_pages[file], )
-
         page_state["page"] = all_parsed_pages[file].metadata
         page_state["post"] = all_parsed_pages[file].metadata
         if not page_state["page"].get("permalink"):
             page_state["page"]["permalink"] = slug.strip("/")
+
         page_state["page"]["generated_on"] = datetime.datetime.now()
 
-        if slug:
+        if slug[0].isdigit():
             date_slug = re.search(r"\d{4}-\d{2}-\d{2}", slug)
             if date_slug:
                 date_slug = date_slug.group(0)
@@ -344,7 +357,6 @@ def render_page(file):
                 )
                 page_state["date"] = page_state["post"]["date"]
                 page_state["full_date"] = page_state["post"]["full_date"]
-                # generate description using first paragraph
                 if "description" not in page_state["post"]:
                     page_state["post"]["description"] = all_parsed_pages[
                         file
@@ -382,15 +394,12 @@ def render_page(file):
             page_state = hook(file, page_state, state)
 
     try:
-        if file.endswith(".md") and file.startswith("pages/posts"):
-            contents = pyromark.markdown(loads(contents).content)
-        elif file.endswith(".md"):
-            contents = pyromark.markdown(contents)
+        if file.endswith(".md"):
+            contents = pyromark.markdown(loads(all_opened_pages[file]).content)
         else:
             contents = loads(contents.render(page=page_state, site=state)).content
     except Exception as e:
         print(f"Error rendering {file}")
-        print(e)
         return
 
     rendered = recursively_build_page_template_with_front_matter(
@@ -408,9 +417,7 @@ def render_page(file):
     permalink = file
 
     # if permalink is _site/templates/index.html, make it _site/index.html
-
     if file == "templates/index.html":
-        # delete index.html dir
         if os.path.exists(os.path.join(SITE_DIR, "index.html")):
             os.remove(os.path.join(SITE_DIR, "index.html"))
         with open(os.path.join(SITE_DIR, "index.html"), "w") as f:
@@ -418,16 +425,17 @@ def render_page(file):
 
         return
 
-    # print(f"Rendering {permalink}")
-
-    if file.startswith("templates/"):
+    if file.startswith("templates/") and any(
+        file.endswith(ext) for ext in [".html", ".md"]
+    ):
         if hasattr(page_state["page"], "permalink"):
             permalink = os.path.join(
                 page_state["page"].permalink.strip("/"), "index.html"
             )
-            print(f"Permalink: {permalink}")
         else:
             permalink = file.replace("templates/", "")
+    else:
+        permalink = file.replace("templates/", "")
 
     make_any_nonexistent_directories(os.path.dirname(os.path.join(SITE_DIR, permalink)))
 
@@ -440,15 +448,23 @@ def render_page(file):
         print(f"Error writing {permalink}")
         print(e)
 
+    state["pages"].append({"url": f"{BASE_URL}/{permalink}", "file": file})
 
-def process_date_archives():
-    # print len of all posts
-    # get all keys in all_opened_pages starting with ROOT_DIR + posts
+
+def process_date_archives() -> None:
+    """
+    Generate date archives for all posts.
+
+    For example, if there are posts on 2022-01-01 and 2022-01-02, generate:
+
+    - /2022/index.html
+    - /2022/01/index.html
+    - /2022/01/01/index.html
+    """
     posts = [
         key for key in all_opened_pages.keys() if key.startswith(ROOT_DIR + "/posts")
     ]
 
-    # get all dates
     dates = set()
     years = {}
 
@@ -456,16 +472,18 @@ def process_date_archives():
         if not hasattr(all_parsed_pages[post], "metadata"):
             continue
 
-        if all_parsed_pages[post].metadata.get("date"):
-            date = all_parsed_pages[post].metadata["date"]
-            dates.add(date)
-            if date.year not in years:
-                years[date.year] = {}
-            if date.month not in years[date.year]:
-                years[date.year][date.month] = {}
-            if date.day not in years[date.year][date.month]:
-                years[date.year][date.month][date.day] = []
-            years[date.year][date.month][date.day].append(post)
+        if not all_parsed_pages[post].metadata.get("date"):
+            continue
+
+        date = all_parsed_pages[post].metadata["date"]
+        dates.add(date)
+        if date.year not in years:
+            years[date.year] = {}
+        if date.month not in years[date.year]:
+            years[date.year][date.month] = {}
+        if date.day not in years[date.year][date.month]:
+            years[date.year][date.month][date.day] = []
+        years[date.year][date.month][date.day].append(post)
 
     for year in years:
         make_any_nonexistent_directories(os.path.join(SITE_DIR, str(year)))
@@ -481,17 +499,17 @@ def process_date_archives():
                 )
 
                 date_archive_state = state.copy()
-                date_archive_state["date"] = datetime.datetime(year, month, day)
+                current_date = datetime.datetime(year, month, day)
+                date_archive_state["date"] = current_date
                 date_archive_state["posts"] = [
                     all_parsed_pages[post].metadata
                     for post in posts
-                    if hasattr(all_parsed_pages[post], "metadata")
-                    and all_parsed_pages[post].metadata.get("date")
-                    == datetime.datetime(year, month, day)
+                    if all_parsed_pages[post].metadata.get("date") == current_date
                 ]
-                # render _layouts/date_archive.html
+
                 date_archive_layout = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/date_archive.html"
                 date_archive_contents = all_opened_pages[date_archive_layout]
+
                 rendered_page = date_archive_contents.render(
                     date_archive_state,
                     site=date_archive_state,
@@ -502,7 +520,7 @@ def process_date_archives():
                 rendered_page = recursively_build_page_template_with_front_matter(
                     all_parsed_pages[date_archive_layout],
                     date_archive_state,
-                    loads(rendered_page).content,
+                    rendered_page,
                 )
 
                 with open(
@@ -515,7 +533,13 @@ def process_date_archives():
 
 
 def process_category_archives():
-    # get all categories
+    """
+    Generate category archives for all posts.
+
+    For example, if you have a post with the `category` key set to `writing`, generate:
+
+    - /writing/index.html
+    """
     categories = set()
     for post in state["posts"]:
         if not post.get("categories"):
@@ -545,19 +569,25 @@ def process_category_archives():
         rendered_page = recursively_build_page_template_with_front_matter(
             all_parsed_pages[category_archive_layout],
             category_archive_state,
-            loads(rendered_page).content,
+            rendered_page,
         )
 
         with open(os.path.join(SITE_DIR, slugify(category), "index.html"), "w") as f:
             f.write(rendered_page)
 
 
-def main(deps=None, watch=False):
-    # remove _layouts from all_dependencies
+def main(deps: list = None, watch: bool = False) -> None:
+    """
+    The Aurora runtime.
+
+    Aurora can be run in two ways:
+
+    - `aurora build` to build the site once, and;
+    - `aurora serve` to watch for changes in the `pages` directory and rebuild the site in real time.
+    """
+
     dependencies = list(toposort_flatten(all_dependencies)) if not deps else deps
 
-    # filter if starts with pages/_
-    # because templates do not need to be directly rendered
     dependencies = [
         dependency
         for dependency in dependencies
@@ -578,22 +608,14 @@ def main(deps=None, watch=False):
     process_date_archives()
     process_category_archives()
 
-    class Watcher(FileSystemEventHandler):
-        def on_modified(self, event):
-            print(f"Detected change in {event.src_path}. Rebuilding.")
-            file_name = event.src_path
-            file_name = file_name.replace(os.getcwd() + "/", "")
-            file_dependencies = all_dependencies[file_name]
-            file_dependencies.add(file_name)
-
-            main(deps=file_dependencies)
-
     if watch:
         observer = Observer()
         observer.schedule(Watcher(), path="pages", recursive=True)
         observer.start()
 
-        print("Watching for changes in pages directory")
+        print("Watching for changes...")
+        print("View your site at ", os.path.join(os.getcwd(), SITE_DIR, "index.html"))
+        print("Press Ctrl+C to stop.")
 
         try:
             while True:
