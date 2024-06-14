@@ -15,7 +15,7 @@ import tqdm
 from jinja2 import (Environment, FileSystemBytecodeCache, FileSystemLoader,
                     Template, meta, nodes)
 from jinja2.visitor import NodeVisitor
-from ryaml_python_frontmatter import loads
+from frontmatter import loads
 from toposort import toposort, toposort_flatten
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
@@ -342,7 +342,6 @@ def recursively_build_page_template_with_front_matter(
     if front_matter and "layout" in front_matter.metadata:
         layout = front_matter.metadata["layout"]
         layout_path = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/{layout}.html"
-        print(front_matter.metadata.get("title"))
 
         page_fm = type(
             "Page", (object,), front_matter.metadata.get("page", front_matter.metadata)
@@ -625,7 +624,7 @@ def process_category_archives():
 
         rendered_page = category_archive_contents.render(
             category_archive_state,
-            site=category_archive_state,
+            site=state,
             posts=category_archive_state["posts"],
             page=category_archive_state,
         )
