@@ -65,7 +65,7 @@ def build():
 
     # import cProfile
     # cProfile.runctx("build_site()", globals(), locals(), filename="profile.prof")
-    print("Building site...")
+    # print("Building site...")
     build_site()
     print("Done! ✨")
 

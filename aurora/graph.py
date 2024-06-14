@@ -7,14 +7,15 @@ if not os.path.exists("config.py"):
 import datetime
 import re
 import time
+from copy import deepcopy
 
 import orjson
 import pyromark
 import tqdm
-from frontmatter import loads
 from jinja2 import (Environment, FileSystemBytecodeCache, FileSystemLoader,
                     Template, meta, nodes)
 from jinja2.visitor import NodeVisitor
+from ryaml_python_frontmatter import loads
 from toposort import toposort, toposort_flatten
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
@@ -70,12 +71,12 @@ def slugify(value: str) -> str:
 class Watcher(FileSystemEventHandler):
     def on_modified(self, event):
         print(f"Detected change in {event.src_path}. Rebuilding.")
-        file_name = event.src_path
-        file_name = file_name.replace(os.getcwd() + "/", "")
-        file_dependencies = all_dependencies[file_name]
-        file_dependencies.add(file_name)
+        # file_name = event.src_path
+        # file_name = file_name.replace(os.getcwd() + "/", "")
+        # file_dependencies = all_dependencies[file_name]
+        # file_dependencies.add(file_name)
 
-        main(deps=file_dependencies)
+        main()  # deps=file_dependencies)
 
 
 class VariableVisitor(NodeVisitor):
@@ -149,9 +150,9 @@ for data_file in all_data_files:
     data_dir = data_file.replace(".json", "")
     for record in all_data_files[data_file]:
         contents = "---\n" + orjson.dumps(record).decode() + "\n---\n"
-        all_opened_pages[os.path.join(ROOT_DIR, data_dir, record.get("slug"))] = (
-            JINJA2_ENV.from_string(contents)
-        )
+        all_opened_pages[
+            os.path.join(ROOT_DIR, data_dir, record.get("slug"))
+        ] = JINJA2_ENV.from_string(contents)
         all_page_contents[os.path.join(ROOT_DIR, data_dir, record.get("slug"))] = loads(
             contents
         )
@@ -204,7 +205,7 @@ def get_file_dependencies_and_evaluated_contents(
     parsed_content["contents"] = pyromark.markdown(parsed_content.content)
 
     parsed_content["url"] = f"{BASE_URL}/{file_name.replace(ROOT_DIR + '/posts/', '')}"
-    
+
     if "categories" not in parsed_content:
         parsed_content["categories"] = []
 
@@ -246,9 +247,9 @@ def get_file_dependencies_and_evaluated_contents(
             date_slug = date_slug.replace("-", "/")
             slug_without_date = re.sub(r"\d{4}-\d{2}-\d{2}-", "", slug)
 
-            parsed_content["url"] = (
-                f"{BASE_URL}/{date_slug}/{slug_without_date.replace('.html', '').replace('.md', '')}/"
-            )
+            parsed_content[
+                "url"
+            ] = f"{BASE_URL}/{date_slug}/{slug_without_date.replace('.html', '').replace('.md', '')}/"
 
     if "layout" in parsed_content:
         dependencies.add(
@@ -258,6 +259,14 @@ def get_file_dependencies_and_evaluated_contents(
             state[parsed_content["layout"] + "s"] = []
 
         state[parsed_content["layout"] + "s"].append(parsed_content)
+
+    if "collection" in parsed_content:
+        collection_normalized = parsed_content["collection"].lower()
+        if not state.get(collection_normalized):
+            state[collection_normalized] = []
+
+        state[collection_normalized].append(parsed_content)
+
     return dependencies, parsed_content
 
 
@@ -308,6 +317,19 @@ def make_any_nonexistent_directories(path):
         os.makedirs(path)
 
 
+def interpolate_front_matter(front_matter: dict, state: dict):
+    """Evaluate front matter with Jinja2 to allow logic in front matter."""
+    if "title" in front_matter.metadata:
+        title = front_matter.metadata["title"]
+
+        title = JINJA2_ENV.from_string(str(title)).render(
+            page=front_matter.metadata, site=state
+        )
+        front_matter.metadata["title"] = title
+
+    return front_matter
+
+
 def recursively_build_page_template_with_front_matter(
     front_matter: dict, state: dict, current_contents: str = ""
 ):
@@ -320,6 +342,7 @@ def recursively_build_page_template_with_front_matter(
     if front_matter and "layout" in front_matter.metadata:
         layout = front_matter.metadata["layout"]
         layout_path = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/{layout}.html"
+        print(front_matter.metadata.get("title"))
 
         page_fm = type(
             "Page", (object,), front_matter.metadata.get("page", front_matter.metadata)
@@ -468,7 +491,12 @@ def render_page(file: str) -> None:
     else:
         permalink = file.replace("templates/", "")
 
-    make_any_nonexistent_directories(os.path.dirname(os.path.join(SITE_DIR, permalink)))
+    if permalink.endswith(".html"):
+        make_any_nonexistent_directories(
+            os.path.dirname(os.path.join(SITE_DIR, permalink))
+        )
+    else:
+        make_any_nonexistent_directories(os.path.join(SITE_DIR))
 
     permalink = os.path.join(SITE_DIR, permalink)
 
@@ -520,21 +548,29 @@ def process_date_archives() -> None:
             )
 
             for day in years[year][month]:
-                make_any_nonexistent_directories(
-                    os.path.join(SITE_DIR, str(year), str(month), str(day))
-                )
+                # ymd path str(year), str(month), str(day), should ahve leading zeros
+                ymd = f"{year}/{str(month).zfill(2)}/{str(day).zfill(2)}"
+                ymd_path = os.path.join(SITE_DIR, ymd)
+
+                make_any_nonexistent_directories(ymd_path)
+
+                date_archive_layout = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/date_archive.html"
+                date_archive_contents = all_opened_pages[date_archive_layout]
 
                 date_archive_state = state.copy()
                 current_date = datetime.datetime(year, month, day)
                 date_archive_state["date"] = current_date
+
+                page = deepcopy(all_parsed_pages[date_archive_layout])
+                page["date"] = current_date
+
                 date_archive_state["posts"] = [
                     all_parsed_pages[post].metadata
                     for post in posts
                     if all_parsed_pages[post].metadata.get("date") == current_date
                 ]
 
-                date_archive_layout = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/date_archive.html"
-                date_archive_contents = all_opened_pages[date_archive_layout]
+                fm = interpolate_front_matter(page, date_archive_state)
 
                 rendered_page = date_archive_contents.render(
                     date_archive_state,
@@ -544,15 +580,11 @@ def process_date_archives() -> None:
                 )
 
                 rendered_page = recursively_build_page_template_with_front_matter(
-                    all_parsed_pages[date_archive_layout],
-                    date_archive_state,
-                    rendered_page,
+                    fm, date_archive_state, loads(rendered_page).content
                 )
 
                 with open(
-                    os.path.join(
-                        SITE_DIR, str(year), str(month), str(day), "index.html"
-                    ),
+                    os.path.join(ymd_path, "index.html"),
                     "wb",
                     buffering=500,
                 ) as f:
@@ -580,11 +612,16 @@ def process_category_archives():
 
         category_archive_layout = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/category.html"
         category_archive_contents = all_opened_pages[category_archive_layout]
+
         category_archive_state = state.copy()
         category_archive_state["category"] = category
+        page = deepcopy(all_parsed_pages[category_archive_layout])
+        page["category"] = category
         category_archive_state["posts"] = [
             post for post in state["posts"] if category in post.get("categories", [])
         ]
+
+        fm = interpolate_front_matter(page, category_archive_state)
 
         rendered_page = category_archive_contents.render(
             category_archive_state,
@@ -594,9 +631,7 @@ def process_category_archives():
         )
 
         rendered_page = recursively_build_page_template_with_front_matter(
-            all_parsed_pages[category_archive_layout],
-            category_archive_state,
-            rendered_page,
+            fm, category_archive_state, loads(rendered_page).content
         )
 
         with open(
@@ -637,6 +672,8 @@ def main(deps: list = None, watch: bool = False) -> None:
 
     process_date_archives()
     process_category_archives()
+
+    print(f"Built site in {datetime.datetime.now() - start}")
 
     if watch:
         observer = Observer()
