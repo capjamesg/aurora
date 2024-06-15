@@ -12,9 +12,15 @@
 
 Aurora is a static site generator implemented in Python.
 
-## Demo
+## Demos
+
+### Blog
 
 https://github.com/capjamesg/aurora/assets/37276661/59e4f3e6-f470-46bd-8812-0b475be40e88
+
+### Directory
+
+https://github.com/capjamesg/aurora/assets/37276661/39f62bd8-cf5f-4d15-a325-7d433b7ceeb0
 
 ## Get Started
 
