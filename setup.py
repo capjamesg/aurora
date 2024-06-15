@@ -30,6 +30,7 @@ setuptools.setup(
         "progress",
         "click",
         "orjson",
+        "tqdm"
     ],
     include_package_data=True,
     package_data={"": ["models.csv"]},

@@ -42,6 +42,7 @@ all_dependencies = {}
 all_parsed_pages = {}
 dates = set()
 years = {}
+reverse_deps = {}
 
 DATA_FILES_DIR = os.path.join(ROOT_DIR, "_data")
 
@@ -290,6 +291,8 @@ def render_page(file: str) -> None:
     Render a page with the Aurora static site generator.
     """
 
+    original_file = file
+
     try:
         contents = all_opened_pages[file]
     except:
@@ -412,7 +415,7 @@ def render_page(file: str) -> None:
     permalink = os.path.join(SITE_DIR, permalink)
 
     state_to_write[permalink] = rendered
-    original_file_to_permalink[permalink] = os.path.join(ROOT_DIR, file)
+    original_file_to_permalink[permalink] = original_file
 
     state["pages"].append({"url": f"{BASE_URL}/{permalink}", "file": file})
 
@@ -564,7 +567,7 @@ def copy_asset_to_site(assets: list) -> None:
             with open(os.path.join(SITE_DIR, "assets", a), "wb") as f2:
                 f2.write(f.read())
 
-def main(deps: list = None, watch: bool = False) -> None:
+def main(deps: list = [], watch: bool = False) -> None:
     """
     The Aurora runtime.
 
@@ -573,6 +576,7 @@ def main(deps: list = None, watch: bool = False) -> None:
     - `aurora build` to build the site once, and;
     - `aurora serve` to watch for changes in the `pages` directory and rebuild the site in real time.
     """
+    print("main called")
 
     start = datetime.datetime.now()
 
@@ -645,7 +649,6 @@ def main(deps: list = None, watch: bool = False) -> None:
             collections_to_files[data_dir].append(
                 os.path.join(ROOT_DIR, data_dir, record.get("slug"), "index.html")
             )
-
     for page, contents in all_opened_pages.items():
         if deps and page not in deps:
             continue
@@ -656,8 +659,25 @@ def main(deps: list = None, watch: bool = False) -> None:
         all_dependencies[page] = dependencies
         all_parsed_pages[page] = parsed_page
 
+        for dependency in dependencies:
+            if dependency not in reverse_deps:
+                reverse_deps[dependency] = set()
+            reverse_deps[dependency].add(page)
+
         if page.startswith("posts/"):
             state["posts"].append(parsed_page)
+
+    if deps:
+        deps = set(deps)
+        new_deps = []
+        
+        while deps:
+            dep = deps.pop()
+            new_deps.append(dep)
+            if dep in reverse_deps:
+                deps.update(reverse_deps[dep])
+
+        deps = new_deps
 
     posts = [
         key for key in all_opened_pages.keys() if key.startswith(ROOT_DIR + "/posts")
@@ -686,6 +706,8 @@ def main(deps: list = None, watch: bool = False) -> None:
         reverse=True,
     )
 
+    print(deps)
+
     dependencies = list(toposort_flatten(all_dependencies)) if not deps else deps
 
     dependencies = [
@@ -709,9 +731,6 @@ def main(deps: list = None, watch: bool = False) -> None:
 
     if deps:
         for file in state_to_write:
-            if "aka" in file:
-                print(original_file_to_permalink.get(file))
-
             if original_file_to_permalink.get(file) in deps:
                 print(f"Writing {file}...")
                 with open(file, "wb", buffering=1000) as f:
@@ -742,7 +761,7 @@ def main(deps: list = None, watch: bool = False) -> None:
         srv = Server()
 
         # override the livereload logger to suppress logs
-        logging.disable(logging.CRITICAL)
+        # logging.disable(logging.CRITICAL)
 
         print("Live reload mode enabled.\nWatching for changes...\n")
         print("View your site at \033[92mhttp://localhost:8000\033[0m")
