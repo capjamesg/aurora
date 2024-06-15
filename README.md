@@ -217,6 +217,8 @@ In a test on a website with 1,763 files and multiple layers of inheritance, Auro
 
 In a test rendering 4,000 markdown files with a single layer of inheritance in each template, Aurora built the website in between 0.9 and 1.2 seconds.
 
+In a test comparing 11ty to Aurora in generating the [Airport Pianos](https://github.com/capjamesg/airport-pianos) website (~45 pages), 11ty took 1.36 seconds to start and generate the site, whereas Aurora took 0.034 seconds.
+
 ## Users
 
 The following sites are built with Aurora:
