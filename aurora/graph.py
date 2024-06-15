@@ -29,7 +29,7 @@ original_file_to_permalink = {}
 
 
 from config import (BASE_URL, LAYOUTS_BASE_DIR, REGISTERED_HOOKS, ROOT_DIR,
-                    SITE_DIR)
+                    SITE_DIR, SITE_STATE)
 
 ALLOWED_EXTENSIONS = ["html", "md", "css", "js", "txt", "xml"]
 
@@ -57,6 +57,8 @@ state = {
     "build_date": today.strftime("%m-%d"),
     "pages": [],
 }
+
+state.update(SITE_STATE)
 
 JINJA2_ENV = Environment(
     loader=FileSystemLoader(ROOT_DIR), bytecode_cache=FileSystemBytecodeCache()
@@ -549,6 +551,18 @@ def process_category_archives():
         ) as f:
             f.write(rendered_page.encode())
 
+def copy_asset_to_site(assets: list) -> None:
+    """
+    Copy an asset from the `assets` directory to the `_site/assets` directory.
+    """
+    assets = [asset.replace("./assets/", "") for asset in assets]
+
+    for a in assets:
+        print(f"Copying {a} to _site/assets/{a}")
+        make_any_nonexistent_directories(os.path.join(SITE_DIR, "assets"))
+        with open(os.path.join("assets", a), "rb") as f:
+            with open(os.path.join(SITE_DIR, "assets", a), "wb") as f2:
+                f2.write(f.read())
 
 def main(deps: list = None, watch: bool = False) -> None:
     """
@@ -599,7 +613,7 @@ def main(deps: list = None, watch: bool = False) -> None:
 
                 all_page_contents[page] = loads(contents)
             except Exception as e:
-                logging.debug(f"Error reading {page}", level=logging.CRICITAL)
+                logging.debug(f"Error reading {page}", level=logging.CRITICAL)
                 pass
 
     for data_file in all_data_files:
@@ -735,4 +749,5 @@ def main(deps: list = None, watch: bool = False) -> None:
         print("Press Ctrl+C to stop.")
 
         srv.watch(ROOT_DIR, lambda: main(deps=[srv.watcher.filepath]))
+        srv.watch("./assets", lambda: copy_asset_to_site([srv.watcher.filepath]))
         srv.serve(root=SITE_DIR, liveport=35729, port=8000, debug=False)
