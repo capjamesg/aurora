@@ -45,6 +45,7 @@ def new(name):
 
 BASE_URLS = {
     "local": os.getcwd(),
+    "production": "https://example.com",
 }
 
 SITE_ENV = os.environ.get("SITE_ENV", "local")
@@ -65,7 +66,7 @@ def build():
 
     # import cProfile
     # cProfile.runctx("build_site()", globals(), locals(), filename="profile.prof")
-    # print("Building site...")
+    print("Building site...")
     build_site()
     print("Done! ✨")
 
