@@ -65,10 +65,10 @@ SITE_STATE = {}
 def build():
     from .graph import main as build_site
 
-    # import cProfile
-    # cProfile.runctx("build_site()", globals(), locals(), filename="profile.prof")
-    print("Building site...")
-    build_site()
+    import cProfile
+    cProfile.runctx("build_site()", globals(), locals(), filename="profile.prof")
+    # print("Building site...")
+    # build_site()
     print("Done! ✨")
 
 

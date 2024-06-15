@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Aurora</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+
+        <style>
+            * {
+                margin: 0;
+                font-family: 'Noto Serif', serif;
+            }
+            :root {
+                --purple: #5e2ca5;
+                --light-purple: #7a4fa6;
+                --dark-purple: #3f1d7a;
+                --lightest-purple: #e0d6eb;
+                --light-purple: #c4b5e3;
+                --background: #524C42;
+            }
+            html {
+                background: var(--background);
+            }
+            nav {
+                background: var(--light-purple);
+                color: white;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem;
+            }
+            nav ul {
+                display: flex;
+                list-style-type: none;
+            }
+            nav ul li {
+                margin-right: 1rem;
+            }
+            .logo {
+                font-size: 1.5rem;
+                font-weight: bold;
+                color: var(--dark-purple);
+            }
+            header {
+                padding: 2rem;
+                color: white;
+                display: flex;
+                justify-content: space-between;
+            }
+            .preamble {
+                flex: 1;
+            }
+            .demo {
+                flex: 1;
+            }
+            nav ul li a {
+                color: var(--dark-purple);
+                text-decoration: none;
+            }
+            video {
+                width: 100%;
+                border-radius: 5px;
+            }
+            a:hover, a:focus {
+                background-color: yellow;
+                color: black;
+                outline: none;
+            }
+            h1 {
+                font-size: 2rem;
+                margin-bottom: 1rem;
+            }
+            pre {
+                background: lightgrey;
+                border-radius: 5px;
+                color: black;
+                margin-top: 20px;
+                margin-right: 20px;
+                font-size: 1.2rem;
+                padding: 20px;
+            }
+        </style>
+    </head>
+    <body>
+        <nav>
+            <p class="logo">Aurora</p>
+            <ul>
+                <li><a href="/">Start a Website</a></li>
+                <li><a href="/">Documentation</a></li>
+                <li><a href="https://github.com/capjamesg/aurora">GitHub</a></li>
+            </ul>
+        </nav>
+        <header>
+            <div class="preamble">
+                <h1>Aurora is a fast, Python-based static site generator</h1>
+                <ul>
+                    <li>Generate 4,000 pages in &lt; 2 seconds.</li>
+                    <li>Define custom hooks in Python.</li>
+                    <li>Use incremental regeneration to speed up development.</li>
+                </ul>
+                <pre><code>$ pip install aurora-ssg
+$ aurora new
+$ cd site/ && aurora serve</code></pre>
+            </div>
+            <div class="demo">
+                <video controls autoplay>
+                    <source src="demo.mov" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+        </header>
+    </body>
+</html>

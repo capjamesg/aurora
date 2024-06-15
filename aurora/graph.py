@@ -62,7 +62,8 @@ state = {
 state.update(SITE_STATE)
 
 JINJA2_ENV = Environment(
-    loader=FileSystemLoader(ROOT_DIR), bytecode_cache=FileSystemBytecodeCache()
+    loader=FileSystemLoader(ROOT_DIR),
+    bytecode_cache=FileSystemBytecodeCache(),
 )
 
 
@@ -87,7 +88,7 @@ class VariableVisitor(NodeVisitor):
 
     def __init__(self):
         self.variables = set()
-
+    
     def visit_Name(self, node, *args, **kwargs):
         self.variables.add(node.name)
         self.generic_visit(node, *args, **kwargs)
@@ -225,7 +226,7 @@ def make_any_nonexistent_directories(path):
 
 def interpolate_front_matter(front_matter: dict, state: dict):
     """Evaluate front matter with Jinja2 to allow logic in front matter."""
-    if "title" in front_matter:
+    if "title" in front_matter and "{" in front_matter["title"]:
         title = front_matter["title"]
 
         title = JINJA2_ENV.from_string(str(title)).render(page=front_matter, site=state)
@@ -576,7 +577,6 @@ def main(deps: list = [], watch: bool = False) -> None:
     - `aurora build` to build the site once, and;
     - `aurora serve` to watch for changes in the `pages` directory and rebuild the site in real time.
     """
-    print("main called")
 
     start = datetime.datetime.now()
 
@@ -706,8 +706,6 @@ def main(deps: list = [], watch: bool = False) -> None:
         reverse=True,
     )
 
-    print(deps)
-
     dependencies = list(toposort_flatten(all_dependencies)) if not deps else deps
 
     dependencies = [
@@ -760,8 +758,7 @@ def main(deps: list = [], watch: bool = False) -> None:
 
         srv = Server()
 
-        # override the livereload logger to suppress logs
-        # logging.disable(logging.CRITICAL)
+        logging.disable(logging.INFO)
 
         print("Live reload mode enabled.\nWatching for changes...\n")
         print("View your site at \033[92mhttp://localhost:8000\033[0m")
