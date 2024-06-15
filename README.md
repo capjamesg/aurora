@@ -143,7 +143,7 @@ BASE_URLS = {
 }
 ```
 
-## Render Collections of Data 
+## Render Collections of Data
 
 You can render data from JSON files as web pages with Aurora. This is useful if you have a JSON collection of data, such as a list of coffee shop reviews, that you want to turn into posts without creating corresponding markdown files.
 
@@ -224,6 +224,8 @@ In a test comparing 11ty to Aurora in generating the [Airport Pianos](https://gi
 The following sites are built with Aurora:
 
 - [James' Coffee Blog](https://jamesg.blog) (1,500+ pages)
+- [Airport Pianos](https://airportpianos.org) (~45 pages)
+- [Train Station Pianos](https://trainstationpianos.org) (~20 pages)
 
 Have you made a website with Aurora? File a PR and add it to the list!
 
