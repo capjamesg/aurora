@@ -1,0 +1,20 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Aurora
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: James
+    email: jamesg@jamesg.blog
+repository-code: 'https://github.com/capjamesg/aurora'
+url: 'https://github.com/capjamesg/aurora'
+abstract: >-
+   A static site generator implemented in Python. 
+keywords:
+  - static site generator
+  - website
+license: MIT
