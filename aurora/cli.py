@@ -17,9 +17,7 @@ def version():
 
 
 @click.command("new")
-@click.option(
-    "--name", prompt="Site name", help="The name of the site.", default="site"
-)
+@click.argument("name")
 def new(name):
     if os.path.exists(name):
         print("Site already exists.")
@@ -65,10 +63,10 @@ SITE_STATE = {}
 def build():
     from .graph import main as build_site
 
-    import cProfile
-    cProfile.runctx("build_site()", globals(), locals(), filename="profile.prof")
+    # import cProfile
+    # cProfile.runctx("build_site()", globals(), locals(), filename="profile.prof")
     # print("Building site...")
-    # build_site()
+    build_site()
     print("Done! ✨")
 
 

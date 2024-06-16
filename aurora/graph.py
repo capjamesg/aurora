@@ -9,8 +9,10 @@ import datetime
 import re
 from copy import deepcopy
 
+import csv
 import orjson
 import pyromark
+from yaml.reader import ReaderError
 import tqdm
 from frontmatter import loads
 from jinja2 import (Environment, FileSystemBytecodeCache, FileSystemLoader,
@@ -26,6 +28,9 @@ os.chdir(module_dir)
 sys.path.append(module_dir)
 state_to_write = {}
 original_file_to_permalink = {}
+
+# print all logs
+logging.basicConfig(level=logging.INFO)
 
 
 from config import (BASE_URL, LAYOUTS_BASE_DIR, REGISTERED_HOOKS, ROOT_DIR,
@@ -88,7 +93,7 @@ class VariableVisitor(NodeVisitor):
 
     def __init__(self):
         self.variables = set()
-    
+
     def visit_Name(self, node, *args, **kwargs):
         self.variables.add(node.name)
         self.generic_visit(node, *args, **kwargs)
@@ -297,7 +302,7 @@ def render_page(file: str) -> None:
     try:
         contents = all_opened_pages[file]
     except:
-        logging.debug(f"Error reading {file}", level=logging.CRITICAL)
+        print(f"Error reading {file}")
         return
 
     page_state = state.copy()
@@ -365,10 +370,13 @@ def render_page(file: str) -> None:
     try:
         if file.endswith(".md"):
             contents = pyromark.markdown(loads(all_opened_pages[file]).content)
+        elif isinstance(contents, str):
+            # this happens for data files only, where content is in the
+            contents = ""
         else:
             contents = loads(contents.render(page=page_state, site=state)).content
     except Exception as e:
-        logging.debug(f"Error rendering {file}", level=logging.CRITICAL)
+        print(f"Error rendering {file}")
         return
 
     rendered = recursively_build_page_template_with_front_matter(
@@ -387,9 +395,10 @@ def render_page(file: str) -> None:
 
     # if permalink is _site/templates/index.html, make it _site/index.html
     if file == "templates/index.html":
-        if os.path.exists(os.path.join(SITE_DIR, "index.html")):
-            os.remove(os.path.join(SITE_DIR, "index.html"))
-        with open(os.path.join(SITE_DIR, "index.html"), "w") as f:
+        path = os.path.join(SITE_DIR, "index.html")
+        if os.path.exists(path):
+            os.remove(path)
+        with open(path, "w") as f:
             f.write(rendered)
 
         return
@@ -406,14 +415,14 @@ def render_page(file: str) -> None:
     else:
         permalink = file.replace("templates/", "")
 
+    permalink = os.path.join(SITE_DIR, permalink)
+
     if permalink.endswith(".html"):
         make_any_nonexistent_directories(
-            os.path.dirname(os.path.join(SITE_DIR, permalink))
+            os.path.dirname(permalink)
         )
     else:
         make_any_nonexistent_directories(os.path.join(SITE_DIR))
-
-    permalink = os.path.join(SITE_DIR, permalink)
 
     state_to_write[permalink] = rendered
     original_file_to_permalink[permalink] = original_file
@@ -591,9 +600,17 @@ def main(deps: list = [], watch: bool = False) -> None:
     for file in os.listdir(DATA_FILES_DIR):
         if deps and file not in deps:
             continue
-        with open(os.path.join(DATA_FILES_DIR, file), "r") as f:
-            all_data_files[file] = orjson.loads(f.read())
-            state[file.replace(".json", "")] = all_data_files[file]
+
+        if os.path.splitext(file)[-1].replace(".", "") == "json":
+            with open(os.path.join(DATA_FILES_DIR, file), "r") as f:
+                all_data_files[file] = orjson.loads(f.read())
+                state[file.replace(".json", "")] = all_data_files[file]
+        elif os.path.splitext(file)[-1].replace(".", "") == "csv":
+            with open(os.path.join(DATA_FILES_DIR, file), "r") as f:
+                all_data_files[file] = list(csv.DictReader(f))
+                state[file.replace(".csv", "")] = all_data_files[file]
+        else:
+            logging.debug(f"Unsupported data file format: {file}", level=logging.CRITICAL)
 
     for root, dirs, files in os.walk(ROOT_DIR):
         for file in files:
@@ -621,9 +638,10 @@ def main(deps: list = [], watch: bool = False) -> None:
                 pass
 
     for data_file in all_data_files:
-        data_dir = data_file.replace(".json", "")
+        data_dir = data_file.replace(".json", "").replace(".csv", "")
         collections_to_files[data_dir] = []
-        for record in all_data_files[data_file]:
+        idx = 0
+        for record in tqdm.tqdm(all_data_files[data_file]):
             if (
                 deps
                 and os.path.join(ROOT_DIR, data_dir, record.get("slug"), "index.html")
@@ -631,24 +649,43 @@ def main(deps: list = [], watch: bool = False) -> None:
             ):
                 continue
 
-            contents = "---\n" + orjson.dumps(record).decode() + "\n---\n"
-
-            if not record.get("slug"):
+            if not record.get("layout"):
                 logging.debug(
-                    f"Error: {data_file} {record} does not have a 'slug' key. This page will not be generated.",
+                    f"Error: {data_file} {record} does not have a 'layout' key. `default` will be used.",
                     level=logging.CRITICAL,
                 )
+                record["layout"] = "default"
+
+            if not record.get("slug"):
+                record["slug"] = str(idx)
+                idx += 1
+                # logging.debug(
+                #     f"Error: {data_file} {record} does not have a 'slug' key. This page will not be generated.",
+                #     level=logging.CRITICAL,
+                # )
+                # continue
+                #
+            slug = record.get("slug")
+            path = os.path.join(ROOT_DIR, data_dir, slug, "index.html")
+
+            try:
+                contents = "---\n" + orjson.dumps(record).decode() + "\n---\n"
+                all_opened_pages[path] = ""
+                # construct an object called Metadata that can be set
+                record = {"metadata": record, "content": ""}
+                metadata = type("Document", (object,), record)
+                all_page_contents[path] = loads(contents)
+                collections_to_files[data_dir].append(path)
+            except ReaderError as e:
+                logging.debug(
+                    f"Error reading {data_file} {record}. This page will not be generated.",
+                    level=logging.CRITICAL,
+                )
+                # delete from all_page_contents
+                all_page_contents.pop(path, None)
+                all_opened_pages.pop(path, None)
                 continue
 
-            all_opened_pages[
-                os.path.join(ROOT_DIR, data_dir, record.get("slug"), "index.html")
-            ] = JINJA2_ENV.from_string(contents)
-            all_page_contents[
-                os.path.join(ROOT_DIR, data_dir, record.get("slug"), "index.html")
-            ] = loads(contents)
-            collections_to_files[data_dir].append(
-                os.path.join(ROOT_DIR, data_dir, record.get("slug"), "index.html")
-            )
     for page, contents in all_opened_pages.items():
         if deps and page not in deps:
             continue
@@ -670,7 +707,7 @@ def main(deps: list = [], watch: bool = False) -> None:
     if deps:
         deps = set(deps)
         new_deps = []
-        
+
         while deps:
             dep = deps.pop()
             new_deps.append(dep)
@@ -730,7 +767,6 @@ def main(deps: list = [], watch: bool = False) -> None:
     if deps:
         for file in state_to_write:
             if original_file_to_permalink.get(file) in deps:
-                print(f"Writing {file}...")
                 with open(file, "wb", buffering=1000) as f:
                     f.write(state_to_write[file].encode())
     else:
@@ -743,8 +779,9 @@ def main(deps: list = [], watch: bool = False) -> None:
 
         for root, dirs, files in os.walk("assets"):
             for file in files:
-                if not os.path.exists(os.path.join(SITE_DIR, root)):
-                    os.makedirs(os.path.join(SITE_DIR, root))
+                path = os.path.join(SITE_DIR, root)
+                if not os.path.exists(path):
+                    os.makedirs(path)
                 with open(os.path.join(root, file), "rb") as f:
                     with open(os.path.join(SITE_DIR, root, file), "wb") as f2:
                         f2.write(f.read())
@@ -758,7 +795,7 @@ def main(deps: list = [], watch: bool = False) -> None:
 
         srv = Server()
 
-        logging.disable(logging.INFO)
+        # logging.disable(logging.INFO)
 
         print("Live reload mode enabled.\nWatching for changes...\n")
         print("View your site at \033[92mhttp://localhost:8000\033[0m")
