@@ -213,7 +213,9 @@ REGISTERED_HOOKS = {
 
 ## Performance
 
-In a test on a website with 1,763 files and multiple layers of inheritance, Aurora built the website in under two seconds. The files in this test were a combination of blog posts, static pages, and programmatic archives for blog posts (date pages, category pages).
+In a test generating 292,884 files from a CSV file with a single layer of inheritance in each template, Aurora built the website in 140.59 seconds (2m:20s).
+
+In a test on a website with 1,763 files and multiple layers of inheritance, Aurora built the website in 3.149s. The files in this test were a combination of blog posts, static pages, and programmatic archives for blog posts (date pages, category pages).
 
 In a test rendering 4,000 markdown files with a single layer of inheritance in each template, Aurora built the website in between 0.9 and 1.2 seconds.
 
