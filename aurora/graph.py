@@ -94,11 +94,11 @@ class VariableVisitor(NodeVisitor):
     def __init__(self):
         self.variables = set()
 
-    def visit_Name(self, node, *args, **kwargs):
+    def visit_Name(self, node, *args, **kwargs) -> None:
         self.variables.add(node.name)
         self.generic_visit(node, *args, **kwargs)
 
-    def visit_Getattr(self, node, *args, **kwargs):
+    def visit_Getattr(self, node, *args, **kwargs) -> None:
         current_node = node
         variable_chain = []
         while isinstance(current_node, nodes.Getattr):
@@ -224,12 +224,12 @@ def get_file_dependencies_and_evaluated_contents(
     return dependencies, parsed_content
 
 
-def make_any_nonexistent_directories(path):
+def make_any_nonexistent_directories(path: str) -> None:
     if not os.path.exists(path):
         os.makedirs(path)
 
 
-def interpolate_front_matter(front_matter: dict, state: dict):
+def interpolate_front_matter(front_matter: dict, state: dict) -> dict:
     """Evaluate front matter with Jinja2 to allow logic in front matter."""
     if "title" in front_matter and "{" in front_matter["title"]:
         title = front_matter["title"]
@@ -242,7 +242,7 @@ def interpolate_front_matter(front_matter: dict, state: dict):
 
 def recursively_build_page_template_with_front_matter(
     front_matter: dict, state: dict, current_contents: str = ""
-):
+) -> str:
     """
     Recursively build a page template with front matter.
 
