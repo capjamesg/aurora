@@ -211,6 +211,14 @@ REGISTERED_HOOKS = {
 }
 ```
 
+## Test Suite
+
+To run the Aurora tests, run:
+
+```
+pytest tests/state.py
+```
+
 ## Performance
 
 In a test generating 292,884 files from a CSV file with a single layer of inheritance in each template, Aurora built the website in 140.59 seconds (2m:20s).
