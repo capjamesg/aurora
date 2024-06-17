@@ -26,18 +26,6 @@ def new(name):
 
     os.makedirs(name)
     os.chdir(name)
-    os.makedirs("pages")
-    os.makedirs("assets")
-    os.chdir("pages")
-    os.makedirs("_layouts")
-    os.makedirs("_data")
-    os.makedirs("posts")
-
-    with open("index.html", "w") as f:
-        with open(os.path.join(cli_dir, "templates", "index.html")) as index:
-            f.write(index.read())
-
-    os.chdir("..")
 
     with open("config.py", "w") as f:
         f.write(
@@ -57,6 +45,20 @@ HOOKS = {}
 SITE_STATE = {}
 """
         )
+
+    os.makedirs("pages")
+    os.makedirs("assets")
+    os.chdir("pages")
+    os.makedirs("_layouts")
+    os.makedirs("_data")
+    os.makedirs("posts")
+    os.makedirs("templates/")
+
+    with open("templates/index.html", "w") as f:
+        with open(os.path.join(cli_dir, "templates", "index.html")) as index:
+            f.write(index.read())
+
+    os.chdir("..")
 
     print(f"Site {name} created. ✨")
     print("Run cd/into the site directory.")

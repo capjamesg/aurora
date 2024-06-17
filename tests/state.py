@@ -98,7 +98,7 @@ def test_new_site_generation():
     assert os.path.exists("test-site/pages/_layouts")
     assert os.path.exists("test-site/pages/_data")
     assert os.path.exists("test-site/pages/posts")
-    assert os.path.exists("test-site/pages/index.html")
+    assert os.path.exists("test-site/pages/templates/index.html")
 
     with open("test-site/config.py") as f:
         data = f.read()
