@@ -43,7 +43,7 @@ setuptools.setup(
     extras_require={
         "dev": [
             "flake8",
-            "black==22.3.0",
+            "black==24.4.2",
             "isort",
             "twine",
             "pytest",
