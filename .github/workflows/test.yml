@@ -2,7 +2,9 @@ name: Aurora Test Suite
 
 on:
   pull_request:
-    branches: [main, develop]
+    branches: [main]
+  push:
+    branches: [main]
 
 jobs:
   build-dev-test:
