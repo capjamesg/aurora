@@ -1,6 +1,7 @@
-import pytest
 import os
 import shutil
+
+import pytest
 
 TEST_FOLDER = os.path.join(os.getcwd(), "tests/library")
 BASE_SITE_DIRECTORY = os.path.join(TEST_FOLDER, "_site")
@@ -99,7 +100,6 @@ def test_new_site_generation():
     assert os.path.exists("test-site/pages/assets")
     assert os.path.exists("test-site/pages/index.html")
 
-    # check contents of config
     with open("test-site/config.py") as f:
         data = f.read()
 
@@ -119,3 +119,21 @@ def test_pre_generation_hook():
 def test_post_build_hook():
     # check for presence of site/made-by.txt
     assert os.path.exists(os.path.join(BASE_SITE_DIRECTORY, "made-by.txt"))
+
+
+def test_date_archive_generation():
+    with open(os.path.join(BASE_SITE_DIRECTORY, "2024/01/01/index.html")) as f:
+        data = f.read()
+
+    assert data.strip().replace(" ", "").replace("\n", "") == fixtures[
+        "date_archive.html"
+    ].strip().replace(" ", "").replace("\n", "")
+
+
+def test_tag_archive_generation():
+    with open(os.path.join(BASE_SITE_DIRECTORY, "tag/announcements/index.html")) as f:
+        data = f.read()
+
+    assert data.strip().replace(" ", "").replace("\n", "") == fixtures[
+        "tag_archive.html"
+    ].strip().replace(" ", "").replace("\n", "")

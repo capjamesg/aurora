@@ -15,4 +15,7 @@ HOOKS = {
     "post_build": {"hooks": ["add_made_by_file"]},
     "template_filters": {"hooks": ["capitalize"]},
 }
-SITE_STATE = {}
+SITE_STATE = {
+    "category_slug_root": "category",
+    "tag_slug_root": "tag",
+}

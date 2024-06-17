@@ -19,6 +19,7 @@ def version():
 @click.command("new")
 @click.argument("name")
 def new(name):
+    cli_dir = os.path.dirname(os.path.realpath(__file__))
     if os.path.exists(name):
         print("Site already exists.")
         return
@@ -33,7 +34,8 @@ def new(name):
     os.makedirs("assets")
 
     with open("index.html", "w") as f:
-        f.write("Hello, world!")
+        with open(os.path.join(cli_dir, "templates", "index.html")) as index:
+            f.write(index.read())
 
     os.chdir("..")
 
@@ -56,7 +58,10 @@ SITE_STATE = {}
 """
         )
 
-    print(f"Site {name} created.")
+    print(f"Site {name} created. ✨")
+    print("Run cd/into the site directory.")
+    print("Then, `aurora build` to build the site.")
+    print("You can also `aurora serve` to start a local server.")
 
 
 @click.command("build")

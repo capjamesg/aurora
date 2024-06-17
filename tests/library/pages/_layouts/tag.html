@@ -1,0 +1,12 @@
+---
+layout: default
+title: "Tag Archive"
+---
+
+<ul>
+    {% for post in page.posts %}
+        <li>
+            <a href="{{ post.url }}">{{ post.title }}</a>
+        </li>
+    {% endfor %}
+</ul>

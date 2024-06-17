@@ -257,7 +257,7 @@ def make_any_nonexistent_directories(path: str) -> None:
 def interpolate_front_matter(front_matter: dict, state: dict) -> dict:
     """Evaluate front matter with Jinja2 to allow logic in front matter."""
 
-    for key in front_matter:
+    for key in front_matter.keys():
         if (
             isinstance(front_matter[key], str)
             and "{" in front_matter[key]
@@ -513,13 +513,13 @@ def process_date_archives() -> None:
             )
 
             for day in years[year][month]:
-                # ymd path str(year), str(month), str(day), should ahve leading zeros
+                # ymd path str(year), str(month), str(day), should have leading zeros
                 ymd = f"{year}/{str(month).zfill(2)}/{str(day).zfill(2)}"
                 ymd_path = os.path.join(SITE_DIR, ymd)
 
                 make_any_nonexistent_directories(ymd_path)
 
-                date_archive_layout = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/date_archive.html"
+                date_archive_layout = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/date.html"
 
                 if not all_opened_pages.get(date_archive_layout):
                     continue
@@ -560,7 +560,7 @@ def process_date_archives() -> None:
                     f.write(rendered_page.encode())
 
 
-def process_category_archives():
+def process_archives(name: str, state_key_associated_with_name: str):
     """
     Generate category archives for all posts.
 
@@ -569,45 +569,46 @@ def process_category_archives():
     - /writing/index.html
     """
     categories = set()
+
     for post in state["posts"]:
-        if not post.get("categories"):
+        if not post.get(state_key_associated_with_name):
             continue
 
-        for category in post["categories"]:
+        for category in post[state_key_associated_with_name]:
             categories.add(category)
 
     for category in categories:
-        make_any_nonexistent_directories(os.path.join(SITE_DIR, slugify(category)))
+        make_any_nonexistent_directories(os.path.join(SITE_DIR, name, slugify(category)))
 
-        category_archive_layout = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/category.html"
-        category_archive_contents = all_opened_pages[category_archive_layout]
+        archive_layout = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/{name}.html"
+        archive_contents = all_opened_pages[archive_layout]
 
-        category_archive_state = state.copy()
-        category_archive_state["category"] = category
-        page = deepcopy(all_parsed_pages[category_archive_layout])
-        page["category"] = category
-        category_archive_state["posts"] = [
-            post for post in state["posts"] if category in post.get("categories", [])
+        archive_state = state.copy()
+        archive_state[name] = category
+        page = deepcopy(all_parsed_pages[archive_layout])
+        page[name] = category
+        archive_state["posts"] = [
+            post for post in state["posts"] if category in post.get(state_key_associated_with_name, [])
         ]
 
-        fm = interpolate_front_matter(page, category_archive_state)
+        fm = interpolate_front_matter(page, archive_state)
 
-        rendered_page = category_archive_contents.render(
-            category_archive_state,
+        rendered_page = archive_contents.render(
+            archive_state,
             site=state,
-            posts=category_archive_state["posts"],
-            page=category_archive_state,
+            posts=archive_state["posts"],
+            page=archive_state,
         )
 
         rendered_page = recursively_build_page_template_with_front_matter(
-            category_archive_layout,
+            archive_layout,
             fm,
-            category_archive_state,
+            archive_state,
             loads(rendered_page).content,
         )
 
         with open(
-            os.path.join(SITE_DIR, slugify(category), "index.html"), "wb", buffering=500
+            os.path.join(SITE_DIR, name, slugify(category), "index.html"), "wb", buffering=500
         ) as f:
             f.write(rendered_page.encode())
 
@@ -827,7 +828,8 @@ def main(deps: list = [], watch: bool = False) -> None:
                 f.write(state_to_write[file].encode())
 
         process_date_archives()
-        process_category_archives()
+        process_archives(SITE_STATE.get("category_slug_root", "category"), "categories")
+        process_archives(SITE_STATE.get("tag_slug_root", "tag"), "tags")
 
         for root, dirs, files in os.walk("assets"):
             for file in files:

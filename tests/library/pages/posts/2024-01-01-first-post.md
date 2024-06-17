@@ -1,6 +1,10 @@
 ---
 title: "Hello, World!"
-layout: blog
+layout: post
+categories:
+- Featured
+tags:
+- Announcements
 ---
 
 This is our first blog post.
