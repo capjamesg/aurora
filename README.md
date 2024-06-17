@@ -6,6 +6,7 @@
 [![downloads](https://img.shields.io/pypi/dm/aurora-ssg)](https://pypistats.org/packages/aurora-ssg)
 [![license](https://img.shields.io/pypi/l/aurora-ssg)](https://github.com/capjamesg/aurora-ssg/blob/main/LICENSE.md)
 [![python-version](https://img.shields.io/pypi/pyversions/aurora-ssg)](https://badge.fury.io/py/aurora-ssg)
+[![test workflow](https://github.com/capjamesg/aurora/actions/workflows/test.yml/badge.svg)](https://github.com/capjamesg/aurora/actions/workflows/test.yml)
 </div>
 
 # Aurora

@@ -33,7 +33,7 @@ setuptools.setup(
         "tqdm"
     ],
     include_package_data=True,
-    package_data={"": ["models.csv"]},
+    package_data={"": ["index.html"]},
     packages=find_packages(exclude=("tests",)),
     entry_points={
         "console_scripts": [
@@ -54,7 +54,7 @@ setuptools.setup(
     },
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: Apache Software License",
+        "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
     python_requires=">=3.7",
