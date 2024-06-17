@@ -28,4 +28,6 @@ jobs:
           pip install pytest
 
       - name: 🧪 Test
+        env:
+          SITE_ENV: production
         run: "python -m pytest ./tests/state.py"
