@@ -26,4 +26,4 @@ jobs:
           pip install pytest
 
       - name: 🧪 Test
-        run: "python -m pytest ./tests/"
+        run: "python -m pytest ./tests/state.py"
