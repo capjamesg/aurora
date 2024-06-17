@@ -15,13 +15,24 @@ import pyromark
 from yaml.reader import ReaderError
 import tqdm
 from frontmatter import loads
-from jinja2 import (Environment, FileSystemBytecodeCache, FileSystemLoader,
-                    Template, meta, nodes)
+from jinja2 import (
+    Environment,
+    FileSystemBytecodeCache,
+    FileSystemLoader,
+    Template,
+    meta,
+    nodes,
+)
 from jinja2.visitor import NodeVisitor
 from toposort import toposort_flatten
 
-from .date_helpers import (archive_date, date_to_xml_string, list_archive_date,
-                           long_date, month_number_to_written_month)
+from .date_helpers import (
+    archive_date,
+    date_to_xml_string,
+    list_archive_date,
+    long_date,
+    month_number_to_written_month,
+)
 
 module_dir = os.getcwd()
 os.chdir(module_dir)
@@ -33,8 +44,7 @@ original_file_to_permalink = {}
 logging.basicConfig(level=logging.INFO)
 
 
-from config import (BASE_URL, LAYOUTS_BASE_DIR, REGISTERED_HOOKS, ROOT_DIR,
-                    SITE_DIR, SITE_STATE)
+from config import BASE_URL, LAYOUTS_BASE_DIR, ROOT_DIR, SITE_DIR, SITE_STATE, HOOKS
 
 ALLOWED_EXTENSIONS = ["html", "md", "css", "js", "txt", "xml"]
 
@@ -49,11 +59,22 @@ dates = set()
 years = {}
 reverse_deps = {}
 
+# ensures a single template cannot have more than 10 levels of inheritance
+INHERITANCE_LIMIT = 10
+
 DATA_FILES_DIR = os.path.join(ROOT_DIR, "_data")
 
-for hook in REGISTERED_HOOKS:
-    REGISTERED_HOOKS[hook] = [
-        getattr(__import__(hook), func) for func in REGISTERED_HOOKS[hook]
+EVALUATED_REGISTERED_TEMPLATE_GENERATION_HOOKS = {}
+EVALUATED_POST_BUILD_HOOKS = {}
+
+for file_name, hooks in HOOKS.get("pre_template_generation", {}).items():
+    EVALUATED_REGISTERED_TEMPLATE_GENERATION_HOOKS[file_name] = [
+        getattr(__import__(file_name), func) for func in hooks
+    ]
+
+for file_name, hooks in HOOKS.get("post_build", {}).items():
+    EVALUATED_POST_BUILD_HOOKS[file_name] = [
+        getattr(__import__(file_name), func) for func in hooks
     ]
 
 today = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
@@ -77,6 +98,10 @@ JINJA2_ENV.filters["date_to_xml_string"] = date_to_xml_string
 JINJA2_ENV.filters["archive_date"] = archive_date
 JINJA2_ENV.filters["list_archive_date"] = list_archive_date
 JINJA2_ENV.filters["month_number_to_written_month"] = month_number_to_written_month
+
+for file_name, hooks in HOOKS.get("template_filters", {}).items():
+    for hook in hooks:
+        JINJA2_ENV.filters[hook] = getattr(__import__(file_name), hook)
 
 
 def slugify(value: str) -> str:
@@ -201,9 +226,9 @@ def get_file_dependencies_and_evaluated_contents(
             date_slug = date_slug.replace("-", "/")
             slug_without_date = re.sub(r"\d{4}-\d{2}-\d{2}-", "", slug)
 
-            parsed_content[
-                "url"
-            ] = f"{BASE_URL}/{date_slug}/{slug_without_date.replace('.html', '').replace('.md', '')}/"
+            parsed_content["url"] = (
+                f"{BASE_URL}/{date_slug}/{slug_without_date.replace('.html', '').replace('.md', '')}/"
+            )
 
     if "layout" in parsed_content:
         dependencies.add(
@@ -231,17 +256,29 @@ def make_any_nonexistent_directories(path: str) -> None:
 
 def interpolate_front_matter(front_matter: dict, state: dict) -> dict:
     """Evaluate front matter with Jinja2 to allow logic in front matter."""
-    if "title" in front_matter and "{" in front_matter["title"]:
-        title = front_matter["title"]
 
-        title = JINJA2_ENV.from_string(str(title)).render(page=front_matter, site=state)
-        front_matter["title"] = title
+    for key in front_matter:
+        if (
+            isinstance(front_matter[key], str)
+            and "{" in front_matter[key]
+            and key != "contents"
+        ):
+            item = front_matter[key]
+
+            item = JINJA2_ENV.from_string(item).render(
+                page=front_matter["page"], site=state
+            )
+            front_matter[key] = item
 
     return front_matter
 
 
 def recursively_build_page_template_with_front_matter(
-    front_matter: dict, state: dict, current_contents: str = ""
+    file_name: str,
+    front_matter: dict,
+    state: dict,
+    current_contents: str = "",
+    level: int = 0,
 ) -> str:
     """
     Recursively build a page template with front matter.
@@ -249,14 +286,19 @@ def recursively_build_page_template_with_front_matter(
     This function is called recursively until there is no layout key in the front matter.
     """
 
+    if level > 10:
+        logging.critical(
+            f"{file_name} has more than ten levels of recursion. Template will be marked as empty."
+        )
+        return ""
+
     if front_matter and "layout" in front_matter.metadata:
         layout = front_matter.metadata["layout"]
         layout_path = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/{layout}.html"
 
-        if "page" in front_matter.metadata:
-            front_matter.metadata["page"] = interpolate_front_matter(
-                front_matter.metadata["page"], state
-            )
+        front_matter.metadata["page"] = interpolate_front_matter(
+            front_matter.metadata, state
+        )
 
         page_fm = type(
             "Page", (object,), front_matter.metadata.get("page", front_matter.metadata)
@@ -286,7 +328,7 @@ def recursively_build_page_template_with_front_matter(
             layout_front_matter["page"] = front_matter.metadata
 
         return recursively_build_page_template_with_front_matter(
-            layout_front_matter, state, current_contents.strip()
+            file_name, layout_front_matter, state, current_contents.strip(), level + 1
         )
 
     return current_contents
@@ -363,7 +405,7 @@ def render_page(file: str) -> None:
         page_state["page"] = type("Page", (object,), page_state["page"])()
         page_state["post"] = type("Post", (object,), page_state["post"])()
 
-    for hook, hooks in REGISTERED_HOOKS.items():
+    for hook, hooks in EVALUATED_REGISTERED_TEMPLATE_GENERATION_HOOKS.items():
         for hook in hooks:
             page_state = hook(file, page_state, state)
 
@@ -380,7 +422,7 @@ def render_page(file: str) -> None:
         return
 
     rendered = recursively_build_page_template_with_front_matter(
-        all_parsed_pages[file], page_state, contents
+        file, all_parsed_pages[file], page_state, contents
     )
 
     file = file.replace(ROOT_DIR + "/", "")
@@ -418,9 +460,7 @@ def render_page(file: str) -> None:
     permalink = os.path.join(SITE_DIR, permalink)
 
     if permalink.endswith(".html"):
-        make_any_nonexistent_directories(
-            os.path.dirname(permalink)
-        )
+        make_any_nonexistent_directories(os.path.dirname(permalink))
     else:
         make_any_nonexistent_directories(os.path.join(SITE_DIR))
 
@@ -480,6 +520,10 @@ def process_date_archives() -> None:
                 make_any_nonexistent_directories(ymd_path)
 
                 date_archive_layout = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/date_archive.html"
+
+                if not all_opened_pages.get(date_archive_layout):
+                    continue
+
                 date_archive_contents = all_opened_pages[date_archive_layout]
 
                 date_archive_state = state.copy()
@@ -505,7 +549,7 @@ def process_date_archives() -> None:
                 )
 
                 rendered_page = recursively_build_page_template_with_front_matter(
-                    fm, date_archive_state, loads(rendered_page).content
+                    ymd_path, fm, date_archive_state, loads(rendered_page).content
                 )
 
                 with open(
@@ -556,13 +600,17 @@ def process_category_archives():
         )
 
         rendered_page = recursively_build_page_template_with_front_matter(
-            fm, category_archive_state, loads(rendered_page).content
+            category_archive_layout,
+            fm,
+            category_archive_state,
+            loads(rendered_page).content,
         )
 
         with open(
             os.path.join(SITE_DIR, slugify(category), "index.html"), "wb", buffering=500
         ) as f:
             f.write(rendered_page.encode())
+
 
 def copy_asset_to_site(assets: list) -> None:
     """
@@ -576,6 +624,7 @@ def copy_asset_to_site(assets: list) -> None:
         with open(os.path.join("assets", a), "rb") as f:
             with open(os.path.join(SITE_DIR, "assets", a), "wb") as f2:
                 f2.write(f.read())
+
 
 def main(deps: list = [], watch: bool = False) -> None:
     """
@@ -610,7 +659,9 @@ def main(deps: list = [], watch: bool = False) -> None:
                 all_data_files[file] = list(csv.DictReader(f))
                 state[file.replace(".csv", "")] = all_data_files[file]
         else:
-            logging.debug(f"Unsupported data file format: {file}", level=logging.CRITICAL)
+            logging.debug(
+                f"Unsupported data file format: {file}", level=logging.CRITICAL
+            )
 
     for root, dirs, files in os.walk(ROOT_DIR):
         for file in files:
@@ -642,6 +693,15 @@ def main(deps: list = [], watch: bool = False) -> None:
         collections_to_files[data_dir] = []
         idx = 0
         for record in tqdm.tqdm(all_data_files[data_file]):
+            if not record.get("slug"):
+                record["slug"] = str(idx)
+                idx += 1
+                # logging.debug(
+                #     f"Error: {data_file} {record} does not have a 'slug' key. This page will not be generated.",
+                #     level=logging.CRITICAL,
+                # )
+                # continue
+
             if (
                 deps
                 and os.path.join(ROOT_DIR, data_dir, record.get("slug"), "index.html")
@@ -656,15 +716,6 @@ def main(deps: list = [], watch: bool = False) -> None:
                 )
                 record["layout"] = "default"
 
-            if not record.get("slug"):
-                record["slug"] = str(idx)
-                idx += 1
-                # logging.debug(
-                #     f"Error: {data_file} {record} does not have a 'slug' key. This page will not be generated.",
-                #     level=logging.CRITICAL,
-                # )
-                # continue
-                #
             slug = record.get("slug")
             path = os.path.join(ROOT_DIR, data_dir, slug, "index.html")
 
@@ -673,6 +724,7 @@ def main(deps: list = [], watch: bool = False) -> None:
                 all_opened_pages[path] = ""
                 # construct an object called Metadata that can be set
                 record = {"metadata": record, "content": ""}
+
                 metadata = type("Document", (object,), record)
                 all_page_contents[path] = loads(contents)
                 collections_to_files[data_dir].append(path)
@@ -785,6 +837,10 @@ def main(deps: list = [], watch: bool = False) -> None:
                 with open(os.path.join(root, file), "rb") as f:
                     with open(os.path.join(SITE_DIR, root, file), "wb") as f2:
                         f2.write(f.read())
+
+    for key, hooks in EVALUATED_POST_BUILD_HOOKS.items():
+        for hook in hooks:
+            hook(state)
 
     print(
         f"Built site in \033[94m{(datetime.datetime.now() - start).total_seconds():.3f}s\033[0m ✨\n"

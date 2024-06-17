@@ -51,7 +51,7 @@ BASE_URL = BASE_URLS[SITE_ENV]
 ROOT_DIR = "pages"
 LAYOUTS_BASE_DIR = "_layouts"
 SITE_DIR = "_site"
-REGISTERED_HOOKS = {}
+HOOKS = {}
 SITE_STATE = {}
 """
         )

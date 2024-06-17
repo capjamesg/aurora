@@ -1,0 +1,15 @@
+---
+title: Book List
+permalink: /books/
+layout: default
+---
+
+<h2>Books</h2>
+
+<ul>
+    {% for book in site.books %}
+        <li>
+            <a href="/books/{{ book.slug }}">{{ book.title }} - {{ book.author | capitalize }} </a>
+        </li>
+    {% endfor %}
+</ul>
