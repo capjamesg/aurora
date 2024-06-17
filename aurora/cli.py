@@ -27,11 +27,11 @@ def new(name):
     os.makedirs(name)
     os.chdir(name)
     os.makedirs("pages")
+    os.makedirs("assets")
     os.chdir("pages")
     os.makedirs("_layouts")
     os.makedirs("_data")
     os.makedirs("posts")
-    os.makedirs("assets")
 
     with open("index.html", "w") as f:
         with open(os.path.join(cli_dir, "templates", "index.html")) as index:

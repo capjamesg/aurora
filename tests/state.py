@@ -93,11 +93,11 @@ def test_generate_blog_post():
 def test_new_site_generation():
     os.system("aurora new test-site")
     assert os.path.exists("test-site")
+    assert os.path.exists("test-site/assets")
     assert os.path.exists("test-site/pages")
     assert os.path.exists("test-site/pages/_layouts")
     assert os.path.exists("test-site/pages/_data")
     assert os.path.exists("test-site/pages/posts")
-    assert os.path.exists("test-site/pages/assets")
     assert os.path.exists("test-site/pages/index.html")
 
     with open("test-site/config.py") as f:
