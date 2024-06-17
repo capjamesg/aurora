@@ -33,7 +33,7 @@ setuptools.setup(
         "tqdm"
     ],
     include_package_data=True,
-    package_data={"": ["index.html"]},
+    package_data={"": ["templates/index.html"]},
     packages=find_packages(exclude=("tests",)),
     entry_points={
         "console_scripts": [
