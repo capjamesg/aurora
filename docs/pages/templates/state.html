@@ -24,7 +24,7 @@ Welcome to the website!
 
 <p>Any value in the front matter is stored in the page state. This state can be accessed using:</p>
 
-<pre><code class="language-html">{% raw %}{{ page.title }}{% raw %}</code></pre>
+<pre><code class="language-html">{% raw %}{{ page.title }}{% endraw %}</code></pre>
 
 <h2>Post State</h2>
 
@@ -38,9 +38,9 @@ Welcome to the website!
 layout: default
 ---
 
-&lt;h1&gt;{{ post.title }}&lt;/h1&gt;
+&lt;h1&gt;{% raw %}{{ post.title }}{% endraw %}&lt;/h1&gt;
 
-&lt;p&gt;{{ post.content }}&lt;/p&gt;
+&lt;p&gt;{% raw %}{{ post.content }}{% endraw %}&lt;/p&gt;
 </code></pre>
 
 <p>Here, we access the title and content of the post using the post state.</p>
@@ -68,6 +68,7 @@ title: Blog Home
 layout: default
 ---
 
+{% raw %}
 &lt;ul&gt;
     {% for post in site.posts[:5] %}
         &lt;li&gt;
@@ -75,6 +76,7 @@ layout: default
         &lt;/li&gt;
     {% endfor %}
 &lt;/ul&gt;
+{% endraw %}
 </code></pre>
 
 <p>Here, we iterate over the first five posts in the site state and display them on the page.</p>
