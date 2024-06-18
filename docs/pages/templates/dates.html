@@ -1,0 +1,44 @@
+---
+layout: default
+title: Date Handling
+---
+
+<h2>Date Handling</h2>
+
+<p>Aurora has several default filters that you can use to handle dates.</p>
+
+<ul>
+    <li>long_date - Converts a date to a long format, e.g. "January 01, 2020"</li>
+    <li>date_to_xml_string - Converts a date to an XML string, e.g. "2020-01-01T00:00:00"</li>
+    <li>archive_date - Converts a date to a format suitable for archivess, e.g. "2020/01"</li>
+    <li>month_number_to_written_month - Converts a month number to a written month, e.g. "01" to "January"</li>
+</ul>
+
+import datetime
+
+
+def month_number_to_written_month(month):
+    return datetime.datetime.strptime(str(month), "%m").strftime("%B")
+
+
+def list_archive_date(date):
+    if type(date) is str and "." in date:
+        date = date.replace(" ", "T")
+        date = datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f")
+    elif type(date) is str:
+        date = date.replace(" ", "T")
+        date = datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S-00:00")
+
+    return date
+
+
+def long_date(date):
+    return list_archive_date(date).strftime("%B %d, %Y")
+
+
+def date_to_xml_string(date):
+    return list_archive_date(date).strftime("%Y-%m-%dT%H:%M:%S")
+
+
+def archive_date(date):
+    return list_archive_date(date).strftime("%Y/%m")

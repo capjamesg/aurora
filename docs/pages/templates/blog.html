@@ -1,0 +1,119 @@
+---
+title: Blog
+permalink: /blog/
+layout: default
+---
+
+<h1>Use Aurora as a Blog</h1>
+
+<p>Aurora has out-of-the-box features designed for use with blogs.</p>
+
+<h2>Write a Blog Post</h2>
+
+<p>To use Aurora as a blog, create a markdown file with the following name structure in your <code>pages/posts</code> directory:</p>
+
+<pre><code class="language-text">YYYY-MM-DD-title.md</code></pre>
+
+<p>For example, <code>2020-01-01-hello-world.md</code>.</p>
+
+<p>Within this file, you can specify front matter and, optionally, jinja2 templating.</p>
+
+<p>Here is an example:</p>
+
+<pre><code class="language-html">---
+title: Hello, World!
+layout: post
+---
+
+This is our first blog post.
+</code></pre>
+
+<p>This will be rendered as a blog post using the "pages/_layouts/post.html" file.</p>
+
+<p>Aurora automatically turns your permalink into a URL. For example, the above file will be available at <code>https://example.com/2020/01/01/hello-world/</code>.</p>
+
+<h2>Categories and Tags</h2>
+
+<p>Aurora can automatically generate archive pages for categories and tags.</p>
+
+<p>Categories and tags are treated as two separate collections.</p>
+
+<p>To use this feature, you need to give at least one blog post a category or a tag, like so:</p>
+
+<pre><code class="language-html">---
+title: Hello, World!
+layout: post
+categories:
+  - Announcement
+---
+
+This is our first blog post.
+</code></pre>
+
+<p>Categories and tags are not case-sensitive.</p>
+
+<p>You then need to specify either a category or tag layout file, depending on which you want to support.</p>
+
+<p>To do so, create a file called <code>category.html</code> or <code>tag.html</code> in your <code>pages/_layouts</code> directory.</p>
+
+<p>This file will have access to a <code>page.posts</code> variable that lists all posts in the category or tag.</p>
+
+<p>Here is an example of a category layout file:</p>
+
+{% raw %}
+<pre><code class="language-html">
+---
+layout: default
+title: &quot;Category Archive&quot;
+---
+
+&lt;ul&gt;
+    {% for post in page.posts %}
+        &lt;li&gt;
+            &lt;a href=&quot;{{ post.url }}&quot;&gt;{{ post.title }}&lt;/a&gt;
+        &lt;/li&gt;
+    {% endfor %}
+&lt;/ul&gt;
+</code></pre>
+{% endraw %}
+
+<p>In this example, a page at <code>/category/announcement/index.html</code> will be generated.</p>
+
+<h2>Date Archives</h2>
+
+<p>Aurora can automatically generate date pages for categories and tags.</p>
+
+<p>Date archives show all posts published on a specific day.</p>
+
+<p><em>There is not currently support for month-based or year-based archives.</em></p>
+
+<p>To use this feature, you need to have at least one blog post.</p>
+
+<p>You then need to specify a date archive layout.</p>
+
+<p>To do so, create a file called <code>date.html</code> in your <code>pages/_layouts</code> directory.</p>
+
+<p>This file will have access to a <code>page.posts</code> variable that lists all posts published on a specific day.</p>
+
+<p>Here is an example of a category layout file:</p>
+
+{% raw %}
+<pre><code class="language-html">
+---
+layout: default
+title: &quot;Date Archive&quot;
+---
+
+&lt;ul&gt;
+    {% for post in page.posts %}
+        &lt;li&gt;
+            &lt;a href=&quot;{{ post.url }}&quot;&gt;{{ post.title }}&lt;/a&gt;
+        &lt;/li&gt;
+    {% endfor %}
+&lt;/ul&gt;
+</code></pre>
+{% endraw %}
+
+<p>In this example, a page at <code>/2024/01/01/index.html</code> will be generated, which lists one entry: the hello world post we wrote earlier in this guide.</p>
+
+<p>Now you have a blog set up with Aurora! 🎉</p>

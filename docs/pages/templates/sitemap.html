@@ -1,0 +1,22 @@
+---
+title: Set a Sitemap
+layout: default
+---
+
+<h1>Sitemap</h1>
+
+<p>To define a sitemap, create a file called sitemap.xml in your <code>pages/templates/</code> directory and add the following code:</p>
+
+<pre><code class="language-xml">{% raw %}&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;urlset xmlns=&quot;http://www.sitemaps.org/schemas/sitemap/0.9&quot;&gt;
+    {% for page in site.pages %}
+        {% if not page.noindex %}
+            &lt;url&gt;
+                &lt;loc&gt;
+                    {{ page.url }}
+                &lt;/loc&gt;
+                &lt;lastmod&gt;{{ site.build_time }}&lt;/lastmod&gt;
+            &lt;/url&gt;
+        {% endif %}
+    {% endfor %}
+&lt;/urlset&gt;{% endraw %}</code></pre>

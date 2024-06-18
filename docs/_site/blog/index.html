@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Blog - Aurora Documentationr</title>
+
+        <meta name="description" content="Aurora: An extensible, Python-based static site generator." />
+        <meta name="author" content="Aurora" />
+        <meta name="keywords" content="Aurora, static site generator, Python" />
+
+        <meta property="og:image" content="https://screenshots.jamesg.blog?url=http://localhost:8000/blog/" />
+        <meta property="og:title" content="Blog - Aurora Documentation" />
+        <meta property="og:description" content="Aurora: An extensible, Python-based static site generator." />
+        <meta property="og:url" content="http://localhost:8000/blog/" />
+
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
+            rel="stylesheet"
+        />
+        <link href="http://localhost:8000/assets/prism.css" rel="stylesheet" />
+        <script src="http://localhost:8000/assets/prism.js"></script>
+        <style>
+            * {
+                font-family: "Inter", sans-serif;
+                line-height: 1.6;
+            }
+            html,
+            body {
+                margin: 0;
+                background-color: rgb(246, 245, 240);
+            }
+            nav p,
+            nav ul {
+                margin: 0;
+            }
+            nav {
+                background-color: #aaaaff;
+                color: black;
+                display: flex;
+                justify-content: space-between;
+            }
+            nav ul {
+                display: flex;
+                list-style-type: none;
+            }
+            nav a {
+                color: black;
+                text-decoration: none;
+                margin-right: 1rem;
+            }
+            nav a:hover,
+            nav a:focus {
+                text-decoration: underline;
+            }
+            aside ul {
+                list-style-type: none;
+                padding: 0;
+            }
+            main {
+                max-width: 60em;
+                margin: auto;
+                justify-content: space-between;
+                display: grid;
+                grid-template-columns: 1fr 3fr;
+                border: 1px solid #ccc;
+            }
+            nav {
+                max-width: 60em;
+                margin: auto;
+            }
+
+            .current {
+                font-weight: bold;
+                font-style: italic;
+                text-decoration: underline;
+            }
+            aside a {
+                color: black;
+                text-decoration: none;
+            }
+            aside li:hover {
+                text-decoration: underline;
+            }
+            #content {
+                padding-left: 1rem;
+                padding-right: 1rem;
+                max-width: 45em;
+            }
+            img {
+                max-width: 100%;
+            }
+            pre {
+                border: 1px solid #ccc;
+                max-width: 100%;
+            }
+            aside {
+                padding: 1rem;
+                border-right: 1px solid #ccc;
+            }
+            aside h2 {
+                font-size: 1.1rem;
+            }
+            #logo {
+                max-height: 50px;
+            }
+            video {
+                max-width: 100%;
+            }
+            a {
+                color: royalblue;
+            }
+            button {
+                background-color: #aaaaff;
+                color: black;
+                padding: 0.6rem;
+                border: none;
+                border-radius: 0.25rem;
+                cursor: pointer;
+                width: 100%;
+                font-size: 1.1rem;
+            }
+            a[rel="next"]::after {
+                content: " →";
+            }
+            p code,
+            li code {
+                background-color: #aaaaff;
+                padding: 0.1rem;
+                border-radius: 0.25rem;
+            }
+            article li {
+                margin-bottom: 0.5rem;
+            }
+            .callout {
+                background-color: #f0f0ff;
+                padding: 1em;
+            }
+            #user-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 1rem;
+                list-style-type: none;
+                padding: 0;
+            }
+            footer {
+                padding: 1rem;
+                margin-top: 1rem;
+                font-size: 0.8rem;
+                color: #aaa;
+            }
+            @media (max-width: 800px) {
+                main {
+                    grid-template-columns: 1fr;
+                }
+                aside {
+                    border-right: none;
+                }
+                article {
+                    padding: 1rem;
+                }
+                #content {
+                    padding-left: 0;
+                    padding-right: 0;
+                    max-width: 100%;
+                }
+                pre {
+                    max-width: 20em;
+                }
+                aside {
+                    order: 2;
+                }
+            }
+            nav div {
+                display: flex;
+                align-items: center;
+            }
+            nav div p {
+                margin-left: 1rem;
+            }
+            .github-button-style {
+                margin: 0;
+                margin-top: 10px;
+                margin-right: 20px;
+            }
+        </style>
+        <script async defer src="https://buttons.github.io/buttons.js"></script>
+    </head>
+    <body>
+        <nav>
+            <div>
+                <img
+                    id="logo"
+                    src="https://jamesg.blog/assets/aurora-logo.png"
+                />
+                <p style="font-weight: bold">
+                    Aurora
+                </p>
+            </div>
+            <p class="github-button-style">
+                <a class="github-button" href="https://github.com/capjamesg/aurora" data-color-scheme="no-preference: light; light: light; dark: dark;" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star capjamesg/aurora on GitHub">Star</a>            </p>
+        </nav>
+        <main>
+            <aside>
+                <ul>
+                    <h2>Aurora</h2>
+                    <a href="/"
+                        ><li >What is Aurora?</li></a
+                    >
+                    <a href="/start/"><li >Start a Website</li></a>
+                    <a href="/blog/"><li class='current'>Use Aurora as a Blog</li></a>
+                    <a href="/structure/"><li >Site Structure</li></a>
+                    <a href="/configuration/"><li>Configuration</li></a>
+                    <h2>Build Sites with Data</h2>
+                    <a href="/collections/"><li >Collections</li></a>
+                    <h2>Advanced Features</h2>
+                    <a href="/hooks/"><li >Hooks</li></a>
+                    <a href="/dates/"><li >Date Handling</li></a>
+                    <a href="/permalinks/"><li >Permalinks</li></a>
+                    <a href="/sitemap/"><li >Sitemap</li></a>
+                    <a href="/robots/"><li >robots.txt</li></a>
+                    <h2>Demos</h2>
+                    <a href="/users/"><li >Sites Built with Aurora</li></a>
+                </ul>
+            </aside>
+            <article>
+                <div id="content"><h1>Use Aurora as a Blog</h1>
+
+<p>Aurora has out-of-the-box features designed for use with blogs.</p>
+
+<h2>Write a Blog Post</h2>
+
+<p>To use Aurora as a blog, create a markdown file with the following name structure in your <code>pages/posts</code> directory:</p>
+
+<pre><code class="language-text">YYYY-MM-DD-title.md</code></pre>
+
+<p>For example, <code>2020-01-01-hello-world.md</code>.</p>
+
+<p>Within this file, you can specify front matter and, optionally, jinja2 templating.</p>
+
+<p>Here is an example:</p>
+
+<pre><code class="language-html">---
+title: Hello, World!
+layout: post
+---
+
+This is our first blog post.
+</code></pre>
+
+<p>This will be rendered as a blog post using the "pages/_layouts/post.html" file.</p>
+
+<p>Aurora automatically turns your permalink into a URL. For example, the above file will be available at <code>https://example.com/2020/01/01/hello-world/</code>.</p>
+
+<h2>Categories and Tags</h2>
+
+<p>Aurora can automatically generate archive pages for categories and tags.</p>
+
+<p>Categories and tags are treated as two separate collections.</p>
+
+<p>To use this feature, you need to give at least one blog post a category or a tag, like so:</p>
+
+<pre><code class="language-html">---
+title: Hello, World!
+layout: post
+categories:
+  - Announcement
+---
+
+This is our first blog post.
+</code></pre>
+
+<p>Categories and tags are not case-sensitive.</p>
+
+<p>You then need to specify either a category or tag layout file, depending on which you want to support.</p>
+
+<p>To do so, create a file called <code>category.html</code> or <code>tag.html</code> in your <code>pages/_layouts</code> directory.</p>
+
+<p>This file will have access to a <code>page.posts</code> variable that lists all posts in the category or tag.</p>
+
+<p>Here is an example of a category layout file:</p>
+
+
+<pre><code class="language-html">
+---
+layout: default
+title: &quot;Category Archive&quot;
+---
+
+&lt;ul&gt;
+    {% for post in page.posts %}
+        &lt;li&gt;
+            &lt;a href=&quot;{{ post.url }}&quot;&gt;{{ post.title }}&lt;/a&gt;
+        &lt;/li&gt;
+    {% endfor %}
+&lt;/ul&gt;
+</code></pre>
+
+
+<p>In this example, a page at <code>/category/announcement/index.html</code> will be generated.</p>
+
+<h2>Date Archives</h2>
+
+<p>Aurora can automatically generate date pages for categories and tags.</p>
+
+<p>Date archives show all posts published on a specific day.</p>
+
+<p><em>There is not currently support for month-based or year-based archives.</em></p>
+
+<p>To use this feature, you need to have at least one blog post.</p>
+
+<p>You then need to specify a date archive layout.</p>
+
+<p>To do so, create a file called <code>date.html</code> in your <code>pages/_layouts</code> directory.</p>
+
+<p>This file will have access to a <code>page.posts</code> variable that lists all posts published on a specific day.</p>
+
+<p>Here is an example of a category layout file:</p>
+
+
+<pre><code class="language-html">
+---
+layout: default
+title: &quot;Date Archive&quot;
+---
+
+&lt;ul&gt;
+    {% for post in page.posts %}
+        &lt;li&gt;
+            &lt;a href=&quot;{{ post.url }}&quot;&gt;{{ post.title }}&lt;/a&gt;
+        &lt;/li&gt;
+    {% endfor %}
+&lt;/ul&gt;
+</code></pre>
+
+
+<p>In this example, a page at <code>/2024/01/01/index.html</code> will be generated, which lists one entry: the hello world post we wrote earlier in this guide.</p>
+
+<p>Now you have a blog set up with Aurora! 🎉</p></div>
+                <footer>Edit this page on <a href="https://github.com/capjamesg/aurora/tree/main/docs">GitHub</a></footer>
+            </article>
+        </main>
+    </body>
+</html>

@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Configure Your Website - Aurora Documentationr</title>
+
+        <meta name="description" content="Aurora: An extensible, Python-based static site generator." />
+        <meta name="author" content="Aurora" />
+        <meta name="keywords" content="Aurora, static site generator, Python" />
+
+        <meta property="og:image" content="https://screenshots.jamesg.blog?url=http://localhost:8000/configuration/" />
+        <meta property="og:title" content="Configure Your Website - Aurora Documentation" />
+        <meta property="og:description" content="Aurora: An extensible, Python-based static site generator." />
+        <meta property="og:url" content="http://localhost:8000/configuration/" />
+
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
+            rel="stylesheet"
+        />
+        <link href="http://localhost:8000/assets/prism.css" rel="stylesheet" />
+        <script src="http://localhost:8000/assets/prism.js"></script>
+        <style>
+            * {
+                font-family: "Inter", sans-serif;
+                line-height: 1.6;
+            }
+            html,
+            body {
+                margin: 0;
+                background-color: rgb(246, 245, 240);
+            }
+            nav p,
+            nav ul {
+                margin: 0;
+            }
+            nav {
+                background-color: #aaaaff;
+                color: black;
+                display: flex;
+                justify-content: space-between;
+            }
+            nav ul {
+                display: flex;
+                list-style-type: none;
+            }
+            nav a {
+                color: black;
+                text-decoration: none;
+                margin-right: 1rem;
+            }
+            nav a:hover,
+            nav a:focus {
+                text-decoration: underline;
+            }
+            aside ul {
+                list-style-type: none;
+                padding: 0;
+            }
+            main {
+                max-width: 60em;
+                margin: auto;
+                justify-content: space-between;
+                display: grid;
+                grid-template-columns: 1fr 3fr;
+                border: 1px solid #ccc;
+            }
+            nav {
+                max-width: 60em;
+                margin: auto;
+            }
+
+            .current {
+                font-weight: bold;
+                font-style: italic;
+                text-decoration: underline;
+            }
+            aside a {
+                color: black;
+                text-decoration: none;
+            }
+            aside li:hover {
+                text-decoration: underline;
+            }
+            #content {
+                padding-left: 1rem;
+                padding-right: 1rem;
+                max-width: 45em;
+            }
+            img {
+                max-width: 100%;
+            }
+            pre {
+                border: 1px solid #ccc;
+                max-width: 100%;
+            }
+            aside {
+                padding: 1rem;
+                border-right: 1px solid #ccc;
+            }
+            aside h2 {
+                font-size: 1.1rem;
+            }
+            #logo {
+                max-height: 50px;
+            }
+            video {
+                max-width: 100%;
+            }
+            a {
+                color: royalblue;
+            }
+            button {
+                background-color: #aaaaff;
+                color: black;
+                padding: 0.6rem;
+                border: none;
+                border-radius: 0.25rem;
+                cursor: pointer;
+                width: 100%;
+                font-size: 1.1rem;
+            }
+            a[rel="next"]::after {
+                content: " →";
+            }
+            p code,
+            li code {
+                background-color: #aaaaff;
+                padding: 0.1rem;
+                border-radius: 0.25rem;
+            }
+            article li {
+                margin-bottom: 0.5rem;
+            }
+            .callout {
+                background-color: #f0f0ff;
+                padding: 1em;
+            }
+            #user-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 1rem;
+                list-style-type: none;
+                padding: 0;
+            }
+            footer {
+                padding: 1rem;
+                margin-top: 1rem;
+                font-size: 0.8rem;
+                color: #aaa;
+            }
+            @media (max-width: 800px) {
+                main {
+                    grid-template-columns: 1fr;
+                }
+                aside {
+                    border-right: none;
+                }
+                article {
+                    padding: 1rem;
+                }
+                #content {
+                    padding-left: 0;
+                    padding-right: 0;
+                    max-width: 100%;
+                }
+                pre {
+                    max-width: 20em;
+                }
+                aside {
+                    order: 2;
+                }
+            }
+            nav div {
+                display: flex;
+                align-items: center;
+            }
+            nav div p {
+                margin-left: 1rem;
+            }
+            .github-button-style {
+                margin: 0;
+                margin-top: 10px;
+                margin-right: 20px;
+            }
+        </style>
+        <script async defer src="https://buttons.github.io/buttons.js"></script>
+    </head>
+    <body>
+        <nav>
+            <div>
+                <img
+                    id="logo"
+                    src="https://jamesg.blog/assets/aurora-logo.png"
+                />
+                <p style="font-weight: bold">
+                    Aurora
+                </p>
+            </div>
+            <p class="github-button-style">
+                <a class="github-button" href="https://github.com/capjamesg/aurora" data-color-scheme="no-preference: light; light: light; dark: dark;" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star capjamesg/aurora on GitHub">Star</a>            </p>
+        </nav>
+        <main>
+            <aside>
+                <ul>
+                    <h2>Aurora</h2>
+                    <a href="/"
+                        ><li >What is Aurora?</li></a
+                    >
+                    <a href="/start/"><li >Start a Website</li></a>
+                    <a href="/blog/"><li >Use Aurora as a Blog</li></a>
+                    <a href="/structure/"><li >Site Structure</li></a>
+                    <a href="/configuration/"><li>Configuration</li></a>
+                    <h2>Build Sites with Data</h2>
+                    <a href="/collections/"><li >Collections</li></a>
+                    <h2>Advanced Features</h2>
+                    <a href="/hooks/"><li >Hooks</li></a>
+                    <a href="/dates/"><li >Date Handling</li></a>
+                    <a href="/permalinks/"><li >Permalinks</li></a>
+                    <a href="/sitemap/"><li >Sitemap</li></a>
+                    <a href="/robots/"><li >robots.txt</li></a>
+                    <h2>Demos</h2>
+                    <a href="/users/"><li >Sites Built with Aurora</li></a>
+                </ul>
+            </aside>
+            <article>
+                <div id="content"><h2 id="configuration">Configuration</h2>
+<p>
+    You need a <code>config.py</code> file in the directory in which you will
+    build your Aurora site. This file is automatically generated when you run
+    <code>aurora new [site-name]</code>.
+</p>
+<p>
+    This configuration file defines a few values that Aurora will use when
+    processing your website.
+</p>
+<p>
+    Here is the default <code>config.py</code> file, with accompanying comments:
+</p>
+<pre><code class="lang-python">import os
+
+BASE_URLS = {
+    "local": os.getcwd(),
+}
+
+SITE_ENV = os.environ.get("SITE_ENV", "local")
+BASE_URL = BASE_URLS[SITE_ENV]
+ROOT_DIR = "pages" # where your site pages are
+LAYOUTS_BASE_DIR = "_layouts" # where your site layouts are stored
+SITE_DIR = "_site" # the directory in which your site will be saved
+HOOKS = {} # used to register hooks (see `Hooks documentation below for details)
+SITE_STATE = {}</code></pre>
+
+<h2>Base URLs</h2>
+<p>
+    The <code>BASE_URLS</code> dictionary is used to define the base URL for
+    your site. This is useful if you want to maintain multiple environments for
+    your site (e.g., local, staging, production).
+</p>
+<p>
+    Here is an example configuration of a site that has a local and staging
+    environment:
+</p>
+<pre><code class="lang-python"><span class="hljs-keyword">BASE_URLS </span>= {
+    <span class="hljs-string">"production"</span>: <span class="hljs-string">"https://jamesg.blog"</span>,
+    <span class="hljs-string">"staging"</span>: <span class="hljs-string">"https://staging.jamesg.blog"</span>,
+    <span class="hljs-string">"local"</span>: os.getcwd(),
+}
+</code></pre>
+
+<h2>Site State</h2>
+
+<p>
+    All pages in your website can access a <code>site.</code> object. This
+    object contains global information about your website.
+</p>
+
+<p>By default, site state contains:</p>
+
+<ul>
+    <li>A list of your posts (<code>site.posts</code>)</li>
+    <li>The root URL of your site (<code>site.root_url</code>)</li>
+    <li>The build date of your site (<code>site.build_date</code>)</li>
+    <li>A list of all pages in your site (<code>site.pages</code>)</li>
+</ul>
+
+<p>
+    You can add additional information to the site state by modifying the
+    <code>SITE_STATE</code> dictionary in your <code>config.py</code> file.
+</p>
+
+<h2>See Also</h2>
+
+<ul>
+    <li><a href="/hooks/">Hooks</a></li>
+</ul></div>
+                <footer>Edit this page on <a href="https://github.com/capjamesg/aurora/tree/main/docs">GitHub</a></footer>
+            </article>
+        </main>
+    </body>
+</html>

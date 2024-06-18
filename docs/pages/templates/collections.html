@@ -1,0 +1,73 @@
+---
+title: Data Collections
+permalink: /collections/
+layout: default
+---
+
+<h1>Data Collections</h1>
+
+<p>You can turn data from JSON and CSV files into web pages.</p>
+<p>
+    This is useful if you have a data set that you want to turn into a website.
+</p>
+<p>
+    For example, you could export a list of coffee shops you have visited from a
+    spreadsheet and turn the list into a static website.
+</p>
+<h2>Create a Collection</h2>
+<h3>JSON</h3>
+<p>
+    To create a collection from a JSON file, add a new file to your site&#39;s
+    <code>pages/_data</code> directory. This file should have a
+    <code>.json</code> extension.
+</p>
+<p>Within the file, create a list that contains JSON objects, like this:</p>
+<pre><code class="lang-python">[
+    {"slug": "rosslyn-coffee", "layout": "coffee", "title": "Rosslyn Coffee in London is terrific."}
+]
+</code></pre>
+<p>
+    This file is called
+    <code>pages/_data/coffee.json</code>.
+</p>
+<p>
+    Every entry <b>must</b> have a <code>layout</code> key. This corresponds
+    with the name of the template that will be used to render the page. For
+    example, the <code>coffee</code> layout will be rendered using the
+    <code>pages/_layouts/coffee.html</code> template.
+</p>
+<p>
+    Every entry <b>must</b> also have a <code>slug</code> key. This corresponds
+    with the name of the page that will be generated. In the case above, one
+    file will be created in the <code>_site</code> output directory:
+    <code>_site/coffee/rosslyn-coffee/index.html</code>.
+</p>
+<h3>CSV</h3>
+<p>
+    To create a collection from a CSV file, add a new file to your site&#39;s
+    <code>pages/_data</code> directory. This file should have a
+    <code>.json</code> extension.
+</p>
+<p>Here is an example CSV file:</p>
+<pre><code class="lang-python">slug,layout,title
+rosslyn-coffee,coffee,Rosslyn Coffee in London is terrific.
+</code></pre>
+<p class="callout">
+    Your CSV file must have a header row that contains the keys for each entry.
+</p>
+<p>
+    This file is called
+    <code>pages/_data/coffee.csv</code>.
+</p>
+<p>
+    Every entry <b>must</b> have a <code>layout</code> key. This corresponds
+    with the name of the template that will be used to render the page. For
+    example, the <code>coffee</code> layout will be rendered using the
+    <code>pages/_layouts/coffee.html</code> template.
+</p>
+<p>
+    Every entry <b>must</b> also have a <code>slug</code> key. This corresponds
+    with the name of the page that will be generated. In the case above, one
+    file will be created in the <code>_site</code> output directory:
+    <code>_site/coffee/rosslyn-coffee/index.html</code>.
+</p>

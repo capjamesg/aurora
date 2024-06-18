@@ -1,0 +1,24 @@
+---
+title: Set a Sitemap
+layout: default
+---
+
+<h1>robots.txt</h1>
+
+<p>robots.txt files let you tell search engines which pages they can and can't index.</p>
+
+<p>To define a robots.txt file, create a file called robots.txt in your <code>pages/templates/</code> directory.</p>
+
+<p>Here's an example of a robots.txt file that lets all bots crawl all pages, and points to your sitemap for reference:</p>
+
+<pre><code class="language-text">User-agent: *
+Allow: /
+
+Sitemap: /sitemap.xml
+</code></pre>
+
+<h2>See Also</h2>
+
+<ul>
+    <li><a href="https://developers.google.com/search/docs/crawling-indexing/robots/create-robots-txt">Google's robots.txt guide</a></li>
+</ul>

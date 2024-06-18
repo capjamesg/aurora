@@ -1,0 +1,105 @@
+---
+title: Hooks
+layout: default
+---
+
+<h2 id="build-hooks-advanced-">Hooks (Advanced)</h2>
+<p>
+    You can define custom functions that are run before a file is processed by
+    Aurora. You can use this feature to save metadata about a page that can then
+    be consumed by a template.
+</p>
+<p>These functions are called &quot;hooks&quot;.</p>
+<p>There are three types of hooks, which run:</p>
+<ol>
+    <li>Immediately before a page is generated (pre-generation hook)</li>
+    <li>As a jinja2 filter you can access on all pages (<code>template_filters</code> hook)</li>
+    <li>After your site has built.</li>
+</ol>
+
+
+<p>To define a hook, you need to:</p>
+<ol>
+    <li>Write a hook function with the right type signature, and;</li>
+    <li>
+        Add the hook function to the
+        <code>HOOKS</code> dictionary in your <code>config.py</code> file.
+    </li>
+</ol>
+
+<p>Below are instructions on how to define each type of hook.</p>
+
+<h2>Pre-Generation Hooks</h2>
+
+<p>Pre-generation hooks run immediately before a page is generated.</p>
+
+<p>These hooks are useful for adding state to a page for use in rendering (i.e. loading link prveiews from a cache, calculating reading times.)</p>
+
+<p>The type signature of this hook is:</p>
+
+<pre><code class="lang-python">
+def hook_name(file_name: str, page_state: dict, site_state: dict) -&gt; dict:
+    return page_state
+</code></pre>
+
+<p>You can register this hook in the <code>template_filter</code> hook:</p>
+
+<pre><code class="lang-python">
+HOOKS = {
+    "pre_generation": {
+        "example": ["hook_name"]
+    }
+}
+</code></pre>
+
+<h2>Filter Hooks</h2>
+
+<p>Filter hooks are registered as a jinja2 filter.</p>
+
+<p>These hooks are useful for manipulating specific values in a template (i.e. formatting dates, changing text).</p>
+
+<p>The type signature of this hook is:</p>
+
+<pre><code class="lang-python">
+def hook_name(text: str) -&gt; str:
+    return text.upper()
+</code></pre>
+
+<p>You can register this hook in the <code>template_filter</code> hook:</p>
+
+<pre><code class="lang-python">
+HOOKS = {
+    "template_filter": {
+        "example": ["hook_name"]
+    }
+}
+</code></pre>
+
+<p>This hook can then be used in any template on your website:</p>
+
+<pre><code class="lang-html">
+&lt;h1&gt; "hello world" | hook_name &lt;/h1&gt;
+</code></pre>
+
+<h2>Post-Built Hooks</h2>
+
+<p>Post-build hooks run after your site has been built.</p>
+
+<p>These hooks are useful for performing actions after your site has been built (i.e. saving a log of last generation time, invoking CSS/JS minification).</p>
+
+<p>The type signature of this hook is:</p>
+
+<pre><code class="lang-python">
+def hook_name(site_state: str) -&gt; None:
+    pass
+</code></pre>
+
+<p>You can register this hook in the <code>template_filter</code> hook:</p>
+
+<pre><code class="lang-python">
+HOOKS = {
+    "post_build": {
+        "example": ["hook_name"]
+    }
+}
+</code></pre>
