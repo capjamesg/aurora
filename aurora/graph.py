@@ -647,22 +647,23 @@ def main(deps: list = [], watch: bool = False) -> None:
                 for file in files:
                     os.remove(os.path.join(root, file))
 
-    for file in os.listdir(DATA_FILES_DIR):
-        if deps and file not in deps:
-            continue
+    if os.path.exists(DATA_FILES_DIR):
+        for file in os.listdir(DATA_FILES_DIR):
+            if deps and file not in deps:
+                continue
 
-        if os.path.splitext(file)[-1].replace(".", "") == "json":
-            with open(os.path.join(DATA_FILES_DIR, file), "r") as f:
-                all_data_files[file] = orjson.loads(f.read())
-                state[file.replace(".json", "")] = all_data_files[file]
-        elif os.path.splitext(file)[-1].replace(".", "") == "csv":
-            with open(os.path.join(DATA_FILES_DIR, file), "r") as f:
-                all_data_files[file] = list(csv.DictReader(f))
-                state[file.replace(".csv", "")] = all_data_files[file]
-        else:
-            logging.debug(
-                f"Unsupported data file format: {file}", level=logging.CRITICAL
-            )
+            if os.path.splitext(file)[-1].replace(".", "") == "json":
+                with open(os.path.join(DATA_FILES_DIR, file), "r") as f:
+                    all_data_files[file] = orjson.loads(f.read())
+                    state[file.replace(".json", "")] = all_data_files[file]
+            elif os.path.splitext(file)[-1].replace(".", "") == "csv":
+                with open(os.path.join(DATA_FILES_DIR, file), "r") as f:
+                    all_data_files[file] = list(csv.DictReader(f))
+                    state[file.replace(".csv", "")] = all_data_files[file]
+            else:
+                logging.debug(
+                    f"Unsupported data file format: {file}", level=logging.CRITICAL
+                )
 
     for root, dirs, files in os.walk(ROOT_DIR):
         for file in files:
@@ -825,6 +826,7 @@ def main(deps: list = [], watch: bool = False) -> None:
                     f.write(state_to_write[file].encode())
     else:
         for file in state_to_write:
+            make_any_nonexistent_directories(file)
             with open(file, "wb", buffering=1000) as f:
                 f.write(state_to_write[file].encode())
 
