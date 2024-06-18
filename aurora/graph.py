@@ -161,22 +161,21 @@ def get_file_dependencies_and_evaluated_contents(
 
     dependencies = set()
 
-    if not file_name.startswith("pages/_layouts"):
-        for include in includes:
-            if isinstance(include, str):
-                dependencies.add(os.path.join(ROOT_DIR, include))
-            else:
-                dependencies.add(os.path.join(ROOT_DIR, include.template.value))
+    for include in includes:
+        if isinstance(include, str):
+            dependencies.add(os.path.join(ROOT_DIR, include))
+        else:
+            dependencies.add(os.path.join(ROOT_DIR, include.template.value))
 
-        for variable in included_variables:
-            if not variable.startswith("site."):
-                continue
+    for variable in included_variables:
+        if not variable.startswith("site."):
+            continue
 
-            variable = variable.replace("site.", "")
+        variable = variable.replace("site.", "")
 
-            for collection in collections_to_files:
-                if collections_to_files.get(collection):
-                    dependencies.update(collections_to_files[collection])
+        for collection in collections_to_files:
+            if collections_to_files.get(collection):
+                dependencies.update(collections_to_files[collection])
 
     parsed_content = all_page_contents[file_name]
 
@@ -246,6 +245,7 @@ def get_file_dependencies_and_evaluated_contents(
 
         state[collection_normalized].append(parsed_content)
 
+
     return dependencies, parsed_content
 
 
@@ -300,6 +300,10 @@ def recursively_build_page_template_with_front_matter(
             front_matter.metadata, state
         )
 
+        # if "Aurora" in title
+        #
+        # print(front_matter.metadata.get("title"))
+
         page_fm = type(
             "Page", (object,), front_matter.metadata.get("page", front_matter.metadata)
         )()
@@ -307,32 +311,26 @@ def recursively_build_page_template_with_front_matter(
         if hasattr(page_fm, "page"):
             page_fm = type("Page", (object,), page_fm.page)()
 
+
         current_contents = loads(
             all_opened_pages[layout_path].render(
                 page=page_fm,
                 site=state,
                 content=current_contents,
-                post=front_matter.metadata,
+                post=type("Post", (object,), front_matter.metadata.get("page", {}))()
             )
         ).content
 
         layout_front_matter = all_parsed_pages[layout_path]
 
-        # combine current front matter so that we can access it in the layout
-        if "page" in layout_front_matter.metadata:
-            layout_front_matter["page"] = {
-                **layout_front_matter.metadata["page"],
-                **front_matter.metadata,
-            }
-        else:
-            layout_front_matter["page"] = front_matter.metadata
+        layout_front_matter["page"] = front_matter.metadata
+        layout_front_matter["post"] = front_matter.metadata
 
         return recursively_build_page_template_with_front_matter(
             file_name, layout_front_matter, state, current_contents.strip(), level + 1
         )
 
     return current_contents
-
 
 def render_page(file: str) -> None:
     """
@@ -566,7 +564,7 @@ def process_date_archives() -> None:
                     f.write(rendered_page.encode())
 
 
-def process_archives(name: str, state_key_associated_with_name: str):
+def process_archives(name: str, state_key_associated_with_name: str, path: str):
     """
     Generate category archives for all posts.
 
@@ -584,7 +582,7 @@ def process_archives(name: str, state_key_associated_with_name: str):
             categories.add(category)
 
     for category in categories:
-        make_any_nonexistent_directories(os.path.join(SITE_DIR, name, slugify(category)))
+        make_any_nonexistent_directories(os.path.join(SITE_DIR, path, slugify(category)))
 
         archive_layout = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/{name}.html"
         archive_contents = all_opened_pages[archive_layout]
@@ -614,7 +612,7 @@ def process_archives(name: str, state_key_associated_with_name: str):
         )
 
         with open(
-            os.path.join(SITE_DIR, name, slugify(category), "index.html"), "wb", buffering=500
+            os.path.join(SITE_DIR, path, slugify(category), "index.html"), "wb", buffering=500
         ) as f:
             f.write(rendered_page.encode())
 
@@ -719,11 +717,7 @@ def main(deps: list = [], watch: bool = False) -> None:
                 continue
 
             if not record.get("layout"):
-                logging.debug(
-                    f"Error: {data_file} {record} does not have a 'layout' key. `default` will be used.",
-                    level=logging.CRITICAL,
-                )
-                record["layout"] = "default"
+                record["layout"] = data_dir
 
             slug = record.get("slug")
             path = os.path.join(ROOT_DIR, data_dir, slug, "index.html")
@@ -845,8 +839,8 @@ def main(deps: list = [], watch: bool = False) -> None:
                 f.write(state_to_write[file].encode())
 
         process_date_archives()
-        process_archives(SITE_STATE.get("category_slug_root", "category"), "categories")
-        process_archives(SITE_STATE.get("tag_slug_root", "tag"), "tags")
+        process_archives(SITE_STATE.get("category_template", "category"), "categories", SITE_STATE.get("category_slug_root", "category"))
+        process_archives(SITE_STATE.get("tag_template", "tag"), "tags", SITE_STATE.get("tag_slug_root", "tag"))
 
     for key, hooks in EVALUATED_POST_BUILD_HOOKS.items():
         for hook in hooks:
