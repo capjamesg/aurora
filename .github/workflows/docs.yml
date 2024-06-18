@@ -1,0 +1,41 @@
+name: Publish documentation
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip aurora-ssg
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Build main site
+        env:  
+          SITE_ENV: ${{ secrets.SITE_ENV }}  
+        run: |
+          aurora build
+
+      - name: rsync deployments
+        uses: burnett01/rsync-deployments@7.0.1
+        with:
+          switches: -avzr
+          path: "./_site/*"
+          remote_path: ${{ secrets.PATH }}
+          remote_host: ${{ secrets.SERVER_HOST }}
+          remote_user: ${{ secrets.SERVER_USERNAME }}
+          remote_key: ${{ secrets.KEY }}
