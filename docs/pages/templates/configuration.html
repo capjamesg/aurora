@@ -27,7 +27,7 @@ BASE_URL = BASE_URLS[SITE_ENV]
 ROOT_DIR = "pages" # where your site pages are
 LAYOUTS_BASE_DIR = "_layouts" # where your site layouts are stored
 SITE_DIR = "_site" # the directory in which your site will be saved
-HOOKS = {} # used to register hooks (see `Hooks documentation below for details)
+HOOKS = {} # used to register hooks (see Hooks documentation for details)
 SITE_STATE = {}</code></pre>
 
 <h2>Base URLs</h2>
@@ -47,29 +47,10 @@ SITE_STATE = {}</code></pre>
 }
 </code></pre>
 
-<h2>Site State</h2>
-
-<p>
-    All pages in your website can access a <code>site.</code> object. This
-    object contains global information about your website.
-</p>
-
-<p>By default, site state contains:</p>
-
-<ul>
-    <li>A list of your posts (<code>site.posts</code>)</li>
-    <li>The root URL of your site (<code>site.root_url</code>)</li>
-    <li>The build date of your site (<code>site.build_date</code>)</li>
-    <li>A list of all pages in your site (<code>site.pages</code>)</li>
-</ul>
-
-<p>
-    You can add additional information to the site state by modifying the
-    <code>SITE_STATE</code> dictionary in your <code>config.py</code> file.
-</p>
 
 <h2>See Also</h2>
 
 <ul>
+    <li><a href="/state/">State</a></li>
     <li><a href="/hooks/">Hooks</a></li>
 </ul>

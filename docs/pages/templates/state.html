@@ -61,6 +61,15 @@ title: Hello, World!
 
 <p>You can access site state on any page.</p>
 
+<p>By default, site state contains:</p>
+
+<ul>
+    <li>A list of your posts (<code>site.posts</code>)</li>
+    <li>The root URL of your site (<code>site.root_url</code>)</li>
+    <li>The build date of your site (<code>site.build_date</code>)</li>
+    <li>A list of all pages in your site (<code>site.pages</code>)</li>
+</ul>
+
 <p>For example, consider the following template:</p>
 
 <pre><code class="language-html">---
@@ -82,3 +91,10 @@ layout: default
 <p>Here, we iterate over the first five posts in the site state and display them on the page.</p>
 
 <p>The above code could be used on a home page to display the most recent posts.</p>
+
+<p>You can add custom values to your site state by adding to the SITE_STATE dictionary in your config.py file:</p>
+
+<pre><code class="language-python">SITE_STATE = {
+    'site_version': os.getenv('SITE_VERSION', '1.0.0')
+}
+</code></pre>

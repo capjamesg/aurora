@@ -14,31 +14,13 @@ title: Date Handling
     <li>month_number_to_written_month - Converts a month number to a written month, e.g. "01" to "January"</li>
 </ul>
 
-import datetime
+<p>These filters can be used like:</p>
 
-
-def month_number_to_written_month(month):
-    return datetime.datetime.strptime(str(month), "%m").strftime("%B")
-
-
-def list_archive_date(date):
-    if type(date) is str and "." in date:
-        date = date.replace(" ", "T")
-        date = datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f")
-    elif type(date) is str:
-        date = date.replace(" ", "T")
-        date = datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S-00:00")
-
-    return date
-
-
-def long_date(date):
-    return list_archive_date(date).strftime("%B %d, %Y")
-
-
-def date_to_xml_string(date):
-    return list_archive_date(date).strftime("%Y-%m-%dT%H:%M:%S")
-
-
-def archive_date(date):
-    return list_archive_date(date).strftime("%Y/%m")
+<pre>
+{% raw %}
+{{ date | long_date }}
+{{ date | date_to_xml_string }}
+{{ date | archive_date }}
+{{ date | month_number_to_written_month }}
+{% endraw %}
+</pre>
