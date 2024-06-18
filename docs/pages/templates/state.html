@@ -1,0 +1,82 @@
+---
+title: State
+permalink: /state/
+layout: default
+---
+
+<h1>State</h1>
+
+<p>There are three types of state in Aurora: page, post and site.</p>
+
+<h2>Page State</h2>
+
+<p>Page state stores values that are only available on that page.</p>
+
+<p>For example, consider the following template:</p>
+
+<pre><code class="language-html">---
+title: Hello, World!
+layout: default
+---
+
+Welcome to the website!
+</code></pre>
+
+<p>Any value in the front matter is stored in the page state. This state can be accessed using:</p>
+
+<pre><code class="language-html">{% raw %}{{ page.title }}{% raw %}</code></pre>
+
+<h2>Post State</h2>
+
+<p>Post state stores information about a blog post.</p>
+
+<p>You can access post state on any template that is used by a post.</p>
+
+<p>For example, consider the following template called pages/_layouts/post.html for rendering a blog post:</p>
+
+<pre><code class="language-html">---
+layout: default
+---
+
+&lt;h1&gt;{{ post.title }}&lt;/h1&gt;
+
+&lt;p&gt;{{ post.content }}&lt;/p&gt;
+</code></pre>
+
+<p>Here, we access the title and content of the post using the post state.</p>
+
+<p>This template (pages/_layouts/post.html) inherits from the default layout, and could be used on any blog post with:</p>
+
+<pre><code class="language-markup">---
+layout: post
+title: Hello, World!
+---
+
+...
+</code></pre>
+
+<h2>Site State</h2>
+
+<p>Page state stores values that are global to the website.</p>
+
+<p>You can access site state on any page.</p>
+
+<p>For example, consider the following template:</p>
+
+<pre><code class="language-html">---
+title: Blog Home
+layout: default
+---
+
+&lt;ul&gt;
+    {% for post in site.posts[:5] %}
+        &lt;li&gt;
+            &lt;a href=&quot;{{ post.url }}&quot;&gt;{{ post.title }}&lt;/a&gt;
+        &lt;/li&gt;
+    {% endfor %}
+&lt;/ul&gt;
+</code></pre>
+
+<p>Here, we iterate over the first five posts in the site state and display them on the page.</p>
+
+<p>The above code could be used on a home page to display the most recent posts.</p>
