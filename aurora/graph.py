@@ -349,6 +349,7 @@ def render_page(file: str) -> None:
 
     page_state = state.copy()
 
+
     if all_parsed_pages[file]:
         slug = file.split("/")[-1].replace(".html", "")
 
@@ -394,6 +395,11 @@ def render_page(file: str) -> None:
             page_state["page"]["url"] = f"{BASE_URL}/{slug}/"
 
         page_state["url"] = page_state["page"]["url"]
+
+    if file == "pages/templates/index.html":
+        page_state["url"] = BASE_URL
+        page_state["page"]["url"] = BASE_URL
+        page_state["page"]["permalink"] = BASE_URL
 
     if not page_state.get("categories"):
         page_state["categories"] = []
