@@ -22,19 +22,19 @@ jobs:
           cache: 'pip'
       - name: Install dependencies
         run: |
+          cd docs
           python3 -m pip install --upgrade pip aurora-ssg
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Build main site
         env:  
           SITE_ENV: ${{ secrets.SITE_ENV }}  
         run: |
+          cd docs
           aurora build
-
       - name: rsync deployments
         uses: burnett01/rsync-deployments@7.0.1
         with:
           switches: -avzr
-          path: "./_site/*"
+          path: "docs/_site/*"
           remote_path: ${{ secrets.PATH }}
           remote_host: ${{ secrets.SERVER_HOST }}
           remote_user: ${{ secrets.SERVER_USERNAME }}
