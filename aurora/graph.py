@@ -825,15 +825,6 @@ def main(deps: list = [], watch: bool = False) -> None:
                 with open(file, "wb", buffering=1000) as f:
                     f.write(state_to_write[file].encode())
     else:
-        for file in state_to_write:
-            make_any_nonexistent_directories(file)
-            with open(file, "wb", buffering=1000) as f:
-                f.write(state_to_write[file].encode())
-
-        process_date_archives()
-        process_archives(SITE_STATE.get("category_slug_root", "category"), "categories")
-        process_archives(SITE_STATE.get("tag_slug_root", "tag"), "tags")
-
         for root, dirs, files in os.walk("assets"):
             for file in files:
                 path = os.path.join(SITE_DIR, root)
@@ -842,6 +833,14 @@ def main(deps: list = [], watch: bool = False) -> None:
                 with open(os.path.join(root, file), "rb") as f:
                     with open(os.path.join(SITE_DIR, root, file), "wb") as f2:
                         f2.write(f.read())
+
+        for file in state_to_write:
+            with open(file, "wb", buffering=1000) as f:
+                f.write(state_to_write[file].encode())
+
+        process_date_archives()
+        process_archives(SITE_STATE.get("category_slug_root", "category"), "categories")
+        process_archives(SITE_STATE.get("tag_slug_root", "tag"), "tags")
 
     for key, hooks in EVALUATED_POST_BUILD_HOOKS.items():
         for hook in hooks:
