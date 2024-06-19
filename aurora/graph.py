@@ -296,28 +296,23 @@ def recursively_build_page_template_with_front_matter(
         layout = front_matter.metadata["layout"]
         layout_path = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/{layout}.html"
 
-        front_matter.metadata["page"] = interpolate_front_matter(
-            front_matter.metadata, state
-        )
-
-        # if "Aurora" in title
-        #
-        # print(front_matter.metadata.get("title"))
+        # front_matter.metadata["page"] = interpolate_front_matter(
+        #     front_matter.metadata.get("page"), state
+        # )
 
         page_fm = type(
-            "Page", (object,), front_matter.metadata.get("page", front_matter.metadata)
+            "Page", (object,), front_matter.metadata
         )()
 
         if hasattr(page_fm, "page"):
             page_fm = type("Page", (object,), page_fm.page)()
-
 
         current_contents = loads(
             all_opened_pages[layout_path].render(
                 page=page_fm,
                 site=state,
                 content=current_contents,
-                post=type("Post", (object,), front_matter.metadata.get("page", {}))()
+                post=type("Post", (object,), front_matter.metadata)(),
             )
         ).content
 
