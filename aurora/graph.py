@@ -266,7 +266,7 @@ def interpolate_front_matter(front_matter: dict, state: dict) -> dict:
             item = front_matter[key]
 
             item = JINJA2_ENV.from_string(item).render(
-                page=front_matter.get("page"), site=state
+                page=front_matter, site=state
             )
             front_matter[key] = item
 
@@ -296,9 +296,9 @@ def recursively_build_page_template_with_front_matter(
         layout = front_matter.metadata["layout"]
         layout_path = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/{layout}.html"
 
-        # front_matter.metadata["page"] = interpolate_front_matter(
-        #     front_matter.metadata.get("page"), state
-        # )
+        front_matter.metadata = interpolate_front_matter(
+            front_matter.metadata, state
+        )
 
         page_fm = type(
             "Page", (object,), front_matter.metadata
