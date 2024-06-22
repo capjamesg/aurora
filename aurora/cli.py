@@ -67,13 +67,14 @@ SITE_STATE = {}
 
 
 @click.command("build")
-def build():
+@click.option("--incremental", is_flag=True)
+def build(incremental):
     from .graph import main as build_site
 
     # import cProfile
     # cProfile.runctx("build_site()", globals(), locals(), filename="profile.prof")
     # print("Building site...")
-    build_site()
+    build_site(incremental=incremental)
     print("Done! ✨")
 
 

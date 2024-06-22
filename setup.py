@@ -30,7 +30,7 @@ setuptools.setup(
         "progress",
         "click",
         "orjson",
-        "tqdm"
+        "tqdm",
     ],
     include_package_data=True,
     package_data={"": ["templates/index.html"]},

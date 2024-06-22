@@ -1,17 +1,15 @@
 import datetime
 
+import dateutil.parser
+
 
 def month_number_to_written_month(month):
     return datetime.datetime.strptime(str(month), "%m").strftime("%B")
 
 
 def list_archive_date(date):
-    if type(date) is str and "." in date:
-        date = date.replace(" ", "T")
-        date = datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f")
-    elif type(date) is str:
-        date = date.replace(" ", "T")
-        date = datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S-00:00")
+    if isinstance(date, str):
+        date = dateutil.parser.parse(date)
 
     return date
 

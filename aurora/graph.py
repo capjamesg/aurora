@@ -5,15 +5,16 @@ import sys
 if not os.path.exists("config.py"):
     raise Exception("config.py not found")
 
+import csv
 import datetime
+import json
 import re
 from copy import deepcopy
 
-import csv
 import orjson
 import pyromark
-from yaml.reader import ReaderError
 import tqdm
+from frontmatter import Post as FrontMatterPost
 from frontmatter import loads
 from jinja2 import (
     Environment,
@@ -25,6 +26,7 @@ from jinja2 import (
 )
 from jinja2.visitor import NodeVisitor
 from toposort import toposort_flatten
+from yaml.reader import ReaderError
 
 from .date_helpers import (
     archive_date,
@@ -44,7 +46,7 @@ original_file_to_permalink = {}
 logging.basicConfig(level=logging.INFO)
 
 
-from config import BASE_URL, LAYOUTS_BASE_DIR, ROOT_DIR, SITE_DIR, SITE_STATE, HOOKS
+from config import BASE_URL, HOOKS, LAYOUTS_BASE_DIR, ROOT_DIR, SITE_DIR, SITE_STATE
 
 ALLOWED_EXTENSIONS = ["html", "md", "css", "js", "txt", "xml"]
 
@@ -67,6 +69,19 @@ DATA_FILES_DIR = os.path.join(ROOT_DIR, "_data")
 EVALUATED_REGISTERED_TEMPLATE_GENERATION_HOOKS = {}
 EVALUATED_POST_BUILD_HOOKS = {}
 
+
+class Post:
+    def __init__(self, front_matter):
+        self.__dict__.update(front_matter)
+
+    def __getattr__(self, name):
+        return self.__dict__.get(name)
+
+    def serialize_as_json(self):
+        """Serialize the Post object as JSON."""
+        return orjson.dumps(self.__dict__).decode()
+
+
 for file_name, hooks in HOOKS.get("pre_template_generation", {}).items():
     EVALUATED_REGISTERED_TEMPLATE_GENERATION_HOOKS[file_name] = [
         getattr(__import__(file_name), func) for func in hooks
@@ -83,6 +98,7 @@ state = {
     "root_url": BASE_URL,
     "build_date": today.strftime("%m-%d"),
     "pages": [],
+    "build_timestamp": datetime.datetime.now().isoformat(),
 }
 
 state.update(SITE_STATE)
@@ -225,9 +241,9 @@ def get_file_dependencies_and_evaluated_contents(
             date_slug = date_slug.replace("-", "/")
             slug_without_date = re.sub(r"\d{4}-\d{2}-\d{2}-", "", slug)
 
-            parsed_content["url"] = (
-                f"{BASE_URL}/{date_slug}/{slug_without_date.replace('.html', '').replace('.md', '')}/"
-            )
+            parsed_content[
+                "url"
+            ] = f"{BASE_URL}/{date_slug}/{slug_without_date.replace('.html', '').replace('.md', '')}/"
 
     if "layout" in parsed_content:
         dependencies.add(
@@ -244,7 +260,6 @@ def get_file_dependencies_and_evaluated_contents(
             state[collection_normalized] = []
 
         state[collection_normalized].append(parsed_content)
-
 
     return dependencies, parsed_content
 
@@ -265,9 +280,7 @@ def interpolate_front_matter(front_matter: dict, state: dict) -> dict:
         ):
             item = front_matter[key]
 
-            item = JINJA2_ENV.from_string(item).render(
-                page=front_matter, site=state
-            )
+            item = JINJA2_ENV.from_string(item).render(page=front_matter, site=state)
             front_matter[key] = item
 
     return front_matter
@@ -296,13 +309,9 @@ def recursively_build_page_template_with_front_matter(
         layout = front_matter.metadata["layout"]
         layout_path = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/{layout}.html"
 
-        front_matter.metadata = interpolate_front_matter(
-            front_matter.metadata, state
-        )
+        front_matter.metadata = interpolate_front_matter(front_matter.metadata, state)
 
-        page_fm = type(
-            "Page", (object,), front_matter.metadata
-        )()
+        page_fm = type("Page", (object,), front_matter.metadata)()
 
         if hasattr(page_fm, "page"):
             page_fm = type("Page", (object,), page_fm.page)()
@@ -312,7 +321,7 @@ def recursively_build_page_template_with_front_matter(
                 page=page_fm,
                 site=state,
                 content=current_contents,
-                post=type("Post", (object,), front_matter.metadata)(),
+                post=Post(front_matter.metadata),
             )
         ).content
 
@@ -327,6 +336,7 @@ def recursively_build_page_template_with_front_matter(
 
     return current_contents
 
+
 def render_page(file: str) -> None:
     """
     Render a page with the Aurora static site generator.
@@ -336,12 +346,12 @@ def render_page(file: str) -> None:
 
     try:
         contents = all_opened_pages[file]
-    except:
+    except Exception as e:
         print(f"Error reading {file}")
+        raise e
         return
 
     page_state = state.copy()
-
 
     if all_parsed_pages[file]:
         slug = file.split("/")[-1].replace(".html", "")
@@ -398,11 +408,10 @@ def render_page(file: str) -> None:
         page_state["categories"] = []
 
     state["categories"] = []
-    state["stream"] = []
 
     if page_state.get("page"):
         page_state["page"] = type("Page", (object,), page_state["page"])()
-        page_state["post"] = type("Post", (object,), page_state["post"])()
+        page_state["post"] = Post(page_state["page"].__dict__)
 
     for hook, hooks in EVALUATED_REGISTERED_TEMPLATE_GENERATION_HOOKS.items():
         for hook in hooks:
@@ -577,7 +586,9 @@ def process_archives(name: str, state_key_associated_with_name: str, path: str):
             categories.add(category)
 
     for category in categories:
-        make_any_nonexistent_directories(os.path.join(SITE_DIR, path, slugify(category)))
+        make_any_nonexistent_directories(
+            os.path.join(SITE_DIR, path, slugify(category))
+        )
 
         archive_layout = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/{name}.html"
         archive_contents = all_opened_pages[archive_layout]
@@ -587,7 +598,9 @@ def process_archives(name: str, state_key_associated_with_name: str, path: str):
         page = deepcopy(all_parsed_pages[archive_layout])
         page[name] = category
         archive_state["posts"] = [
-            post for post in state["posts"] if category in post.get(state_key_associated_with_name, [])
+            post
+            for post in state["posts"]
+            if category in post.get(state_key_associated_with_name, [])
         ]
 
         fm = interpolate_front_matter(page, archive_state)
@@ -607,7 +620,9 @@ def process_archives(name: str, state_key_associated_with_name: str, path: str):
         )
 
         with open(
-            os.path.join(SITE_DIR, path, slugify(category), "index.html"), "wb", buffering=500
+            os.path.join(SITE_DIR, path, slugify(category), "index.html"),
+            "wb",
+            buffering=500,
         ) as f:
             f.write(rendered_page.encode())
 
@@ -626,7 +641,91 @@ def copy_asset_to_site(assets: list) -> None:
                 f2.write(f.read())
 
 
-def main(deps: list = [], watch: bool = False) -> None:
+def get_state_from_last_build() -> dict:
+    """
+    Get the state from the last build.
+    """
+    try:
+        data = orjson.loads(open("state.json", "r").read())
+    except Exception as e:
+        print("Error reading state.json. Running a full build.")
+        return {}
+
+    return data
+
+
+def calculate_dependencies_from_saved_state(all_dependencies: dict) -> list:
+    deps = []
+
+    last_build = datetime.datetime.strptime(
+        get_state_from_last_build().get("last_build"), "%Y-%m-%dT%H:%M:%S.%f"
+    )
+
+    for root, dirs, files in os.walk(ROOT_DIR):
+        # add if has changed since last build
+        for file in files:
+            path = os.path.join(root, file)
+            # must be of parsable extension
+            if os.path.splitext(file)[-1].replace(".", "") not in ALLOWED_EXTENSIONS:
+                continue
+                
+            if os.path.getmtime(path) > last_build.timestamp():
+                print(f"Detected change in {path}. Rebuilding this page and its dependencies.")
+
+                dependencies_of_dependencies = [
+                    i for i in all_dependencies if path in all_dependencies[i]
+                ] + [path]
+                deps.extend(dependencies_of_dependencies)
+
+    return deps
+
+
+def load_data_from_data_files(deps: list) -> None:
+    for data_file in all_data_files:
+        data_dir = data_file.replace(".json", "").replace(".csv", "")
+        collections_to_files[data_dir] = []
+        idx = 0
+        for record in tqdm.tqdm(all_data_files[data_file]):
+            if not record.get("slug"):
+                record["slug"] = str(idx)
+                idx += 1
+                logging.debug(
+                    f"Error: {data_file} {record} does not have a 'slug' key. This page will not be generated.",
+                    level=logging.CRITICAL,
+                )
+
+            if (
+                deps
+                and os.path.join(ROOT_DIR, data_dir, record.get("slug"), "index.html")
+                not in deps
+            ):
+                continue
+
+            if not record.get("layout"):
+                record["layout"] = data_dir
+
+            slug = record.get("slug")
+            path = os.path.join(ROOT_DIR, data_dir, slug, "index.html")
+
+            try:
+                contents = "---\n" + orjson.dumps(record).decode() + "\n---\n"
+                all_opened_pages[path] = ""
+                # construct an object called Metadata that can be set
+                record = {"metadata": record, "content": ""}
+
+                all_page_contents[path] = loads(contents)
+                collections_to_files[data_dir].append(path)
+            except ReaderError as e:
+                logging.debug(
+                    f"Error reading {data_file} {record}. This page will not be generated.",
+                    level=logging.CRITICAL,
+                )
+                # delete from all_page_contents
+                all_page_contents.pop(path, None)
+                all_opened_pages.pop(path, None)
+                continue
+
+def main(deps: list = [], watch: bool = False, incremental: bool = False) -> None:
     """
     The Aurora runtime.
 
@@ -636,13 +735,29 @@ def main(deps: list = [], watch: bool = False) -> None:
     - `aurora serve` to watch for changes in the `pages` directory and rebuild the site in real time.
     """
 
+    initially_incemental = incremental
+
+    global state
+    global all_dependencies
+
     start = datetime.datetime.now()
+
+    if incremental:
+        data = get_state_from_last_build()
+
+        if data:
+            all_dependencies = data.get("all_dependencies", {})
+            deps = calculate_dependencies_from_saved_state(all_dependencies)
+
+            if len(deps) == 0:
+                print("No changes detected. Exiting.")
+                return
 
     if not os.path.exists(SITE_DIR):
         os.makedirs(SITE_DIR)
     else:
-        if not deps:
-            for root, dirs, files in os.walk(SITE_DIR):
+        if not deps and not incremental:
+            for root, _, files in os.walk(SITE_DIR):
                 for file in files:
                     os.remove(os.path.join(root, file))
 
@@ -672,8 +787,13 @@ def main(deps: list = [], watch: bool = False) -> None:
 
             all_pages.append(os.path.join(root, file))
 
+    load_data_from_data_files(deps)
+
     for page in all_pages:
-        if deps and page not in deps:
+        if deps and page not in deps and not incremental:
+            continue
+
+        if incremental and page not in deps and not page.startswith("pages/_"):
             continue
 
         with open(page, "r") as f:
@@ -687,58 +807,12 @@ def main(deps: list = [], watch: bool = False) -> None:
                 all_page_contents[page] = loads(contents)
             except Exception as e:
                 logging.debug(f"Error reading {page}", level=logging.CRITICAL)
-                pass
-
-    for data_file in all_data_files:
-        data_dir = data_file.replace(".json", "").replace(".csv", "")
-        collections_to_files[data_dir] = []
-        idx = 0
-        for record in tqdm.tqdm(all_data_files[data_file]):
-            if not record.get("slug"):
-                record["slug"] = str(idx)
-                idx += 1
-                # logging.debug(
-                #     f"Error: {data_file} {record} does not have a 'slug' key. This page will not be generated.",
-                #     level=logging.CRITICAL,
-                # )
-                # continue
-                #
-
-            if (
-                deps
-                and os.path.join(ROOT_DIR, data_dir, record.get("slug"), "index.html")
-                not in deps
-            ):
-                continue
-
-            if not record.get("layout"):
-                record["layout"] = data_dir
-
-            slug = record.get("slug")
-            path = os.path.join(ROOT_DIR, data_dir, slug, "index.html")
-
-            try:
-                contents = "---\n" + orjson.dumps(record).decode() + "\n---\n"
-                all_opened_pages[path] = ""
-                # construct an object called Metadata that can be set
-                record = {"metadata": record, "content": ""}
-
-                metadata = type("Document", (object,), record)
-                all_page_contents[path] = loads(contents)
-                collections_to_files[data_dir].append(path)
-            except ReaderError as e:
-                logging.debug(
-                    f"Error reading {data_file} {record}. This page will not be generated.",
-                    level=logging.CRITICAL,
-                )
-                # delete from all_page_contents
-                all_page_contents.pop(path, None)
-                all_opened_pages.pop(path, None)
-                continue
+                # pass
+                raise e
 
     for page, contents in all_opened_pages.items():
-        if deps and page not in deps:
-            continue
+        # if deps and page not in deps:
+        #     continue
 
         dependencies, parsed_page = get_file_dependencies_and_evaluated_contents(
             page, contents
@@ -808,7 +882,7 @@ def main(deps: list = [], watch: bool = False) -> None:
 
     for file in iterator:
         if os.path.isdir(file):
-            for root, dirs, files in os.walk(file):
+            for root, _, files in os.walk(file):
                 for file in files:
                     render_page(os.path.join(root, file))
         else:
@@ -820,7 +894,7 @@ def main(deps: list = [], watch: bool = False) -> None:
                 with open(file, "wb", buffering=1000) as f:
                     f.write(state_to_write[file].encode())
     else:
-        for root, dirs, files in os.walk("assets"):
+        for root, _, files in os.walk("assets"):
             for file in files:
                 path = os.path.join(SITE_DIR, root)
                 if not os.path.exists(path):
@@ -834,12 +908,31 @@ def main(deps: list = [], watch: bool = False) -> None:
                 f.write(state_to_write[file].encode())
 
         process_date_archives()
-        process_archives(SITE_STATE.get("category_template", "category"), "categories", SITE_STATE.get("category_slug_root", "category"))
-        process_archives(SITE_STATE.get("tag_template", "tag"), "tags", SITE_STATE.get("tag_slug_root", "tag"))
+        process_archives(
+            SITE_STATE.get("category_template", "category"),
+            "categories",
+            SITE_STATE.get("category_slug_root", "category"),
+        )
+        process_archives(
+            SITE_STATE.get("tag_template", "tag"),
+            "tags",
+            SITE_STATE.get("tag_slug_root", "tag"),
+        )
 
-    for key, hooks in EVALUATED_POST_BUILD_HOOKS.items():
+    for hooks in EVALUATED_POST_BUILD_HOOKS.values():
         for hook in hooks:
             hook(state)
+
+    if initially_incemental:
+        to_save = {
+            "all_dependencies": {k: list(v) for k, v in all_dependencies.items()},
+            "last_build": state["build_timestamp"],
+        }
+
+        json.dump(
+            to_save,
+            open("state.json", "w")
+        )
 
     print(
         f"Built site in \033[94m{(datetime.datetime.now() - start).total_seconds():.3f}s\033[0m ✨\n"
