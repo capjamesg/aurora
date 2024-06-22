@@ -26,6 +26,15 @@ Welcome to the website!
 
 <pre><code class="language-html">{% raw %}{{ page.title }}{% endraw %}</code></pre>
 
+<div class="callout-tip">
+    <p><b>Tip</b></p>
+    <p>You can access the name of the template from which a page was generated with:</p>
+
+    <pre><code class="language-html">{% raw %}{{ page.generated_from }}{% endraw %}</code></pre>
+
+    <p>This is useful if you want to make a public edit page to a GitHub repository, like the one in the footer of this documentation.</p>
+</div>
+
 <h2>Post State</h2>
 
 <p>Post state stores information about a blog post.</p>

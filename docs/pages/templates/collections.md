@@ -4,16 +4,18 @@ permalink: /collections/
 layout: default
 ---
 
-<h1>Data Collections</h1>
+# Data Collections
 
-<p>You can turn data from JSON and CSV files into web pages.</p>
-<p>
-    This is useful if you have a data set that you want to turn into a website.
-</p>
-<p>
-    For example, you could export a list of coffee shops you have visited from a
-    spreadsheet and turn the list into a static website.
-</p>
+Data collections are groups of data on a website.
+
+You can use collections to create lists of content items (i.e. all of the bookmarks on your website).
+
+You can create a data collection by:
+
+1. Loading data from a JSON file
+2. Loading data from a CSV file
+3. Specifying a `collections` value on any page on your website
+
 <h2>Create a Collection</h2>
 <h3>JSON</h3>
 <p>
@@ -23,7 +25,11 @@ layout: default
 </p>
 <p>Within the file, create a list that contains JSON objects, like this:</p>
 <pre><code class="lang-python">[
-    {"slug": "rosslyn-coffee", "layout": "coffee", "title": "Rosslyn Coffee in London is terrific."}
+    {
+        "slug": "rosslyn-coffee",
+        "layout": "coffee",
+        "title": "Rosslyn Coffee in London is terrific."
+    }
 ]
 </code></pre>
 <p>
@@ -71,3 +77,20 @@ rosslyn-coffee,coffee,Rosslyn Coffee in London is terrific.
     file will be created in the <code>_site</code> output directory:
     <code>_site/coffee/rosslyn-coffee/index.html</code>.
 </p>
+
+# Specify a Collections Attribute
+
+If you want to group multiple existing files together, you can specify a `collections` attribute on any page on your website.
+
+To do so, use the following syntax:
+
+<pre><code class="lang-python">---
+title: My Page
+collections: coffee
+---</code></pre>
+
+You can then access the collection like so:
+
+<pre><code class="lang-python">{% raw %}{% for item in coffee %}{% endraw %}
+    {{ item.title }}
+{% raw %}{% endfor %}{% endraw %}</code></pre>

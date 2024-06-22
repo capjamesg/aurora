@@ -147,6 +147,19 @@
                 list-style-type: none;
                 padding: 0;
             }
+            #template-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+                gap: 1rem;
+                list-style-type: none;
+                padding: 0;
+            }
+            #user-grid li,
+            #template-grid li {
+                border: 1px solid #ccc;
+                padding: 1rem;
+            }
+            
             footer {
                 padding: 1rem;
                 margin-top: 1rem;
@@ -187,6 +200,16 @@
                 margin-top: 10px;
                 margin-right: 20px;
             }
+            .callout-note {
+                background-color: #f0f0ff;
+                padding: 1em;
+                border-left: 5px solid #aaaaff;
+            }
+            .callout-tip {
+                background-color: #f0f0ff;
+                padding: 1em;
+                border-left: 5px solid #aaaaff;
+            }
         </style>
         <script async defer src="https://buttons.github.io/buttons.js"></script>
     </head>
@@ -206,15 +229,18 @@
         </nav>
         <main>
             <aside>
+                {{ page }}
                 <ul>
                     <h2>Aurora</h2>
                     <a href="/"
-                        ><li {% if page.permalink == "/" %}class='current'{% endif %}>What is Aurora?</li></a
+                        ><li {% if page.permalink.strip() == "{{ site.root_url.strip() }}" %}class='current'{% endif %}>What is Aurora?</li></a
                     >
                     <a href="/start/"><li {% if page.permalink == "/start/" %}class='current'{% endif %}>Start a Website</li></a>
                     <a href="/blog/"><li {% if page.permalink == "/blog/" %}class='current'{% endif %}>Use Aurora as a Blog</li></a>
                     <a href="/structure/"><li {% if page.permalink == "/structure/" %}class='current'{% endif %}>Site Structure</li></a>
                     <a href="/configuration/"><li{% if page.permalink == "/configuration/" %}class='current'{% endif %}>Configuration</li></a>
+                    <a href="/build-methods/"><li{% if page.permalink == "/build-methods/" %}class='current'{% endif %}>Build Methods</li></a>
+                    <a href="/templating/"><li {% if page.permalink == "/templating/" %}class='current'{% endif %}>Templating with Jinja2</li></a>
                     <h2>Build Sites with Data</h2>
                     <a href="/collections/"><li {% if page.permalink == "/collections/" %}class='current'{% endif %}>Collections</li></a>
                     <h2>Advanced Features</h2>
@@ -226,13 +252,14 @@
                     <a href="/robots/"><li {% if page.permalink == "/robots/" %}class='current'{% endif %}>robots.txt</li></a>
                     <h2>Demos</h2>
                     <a href="/users/"><li {% if page.permalink == "/users/" %}class='current'{% endif %}>Sites Built with Aurora</li></a>
+                    <a href="/templates/"><li {% if page.permalink == "/templates/" %}class='current'{% endif %}>Aurora Templates</li></a>
                     <a href="/performance/"><li {% if page.permalink == "/performance/" %}class='current'{% endif %}>Performance</li></a>
                     <a href="/design/"><li {% if page.permalink == "/design/" %}class='current'{% endif %}>Aurora Design</li></a>
                 </ul>
             </aside>
             <article>
                 <div id="content">{{ content }}</div>
-                <footer>Edit this page on <a href="https://github.com/capjamesg/aurora/tree/main/docs">GitHub</a></footer>
+                <footer>Edit this page on <a href="https://github.com/capjamesg/aurora/tree/main/docs/{{ page.generated_from }}">GitHub</a></footer>
             </article>
         </main>
     </body>

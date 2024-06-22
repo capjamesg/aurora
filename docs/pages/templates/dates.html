@@ -1,6 +1,7 @@
 ---
 layout: default
 title: Date Handling
+permalink: /dates/
 ---
 
 <h2>Date Handling</h2>
@@ -16,11 +17,7 @@ title: Date Handling
 
 <p>These filters can be used like:</p>
 
-<pre>
-{% raw %}
-{{ date | long_date }}
+<pre><code class="lang-python">{% raw %}{{ date | long_date }}
 {{ date | date_to_xml_string }}
 {{ date | archive_date }}
-{{ date | month_number_to_written_month }}
-{% endraw %}
-</pre>
+{{ date | month_number_to_written_month }}{% endraw %}</code></pre>
