@@ -16,25 +16,14 @@ import orjson
 import pyromark
 import tqdm
 from frontmatter import loads
-from jinja2 import (
-    Environment,
-    FileSystemBytecodeCache,
-    FileSystemLoader,
-    Template,
-    meta,
-    nodes,
-)
+from jinja2 import (Environment, FileSystemBytecodeCache, FileSystemLoader,
+                    Template, meta, nodes)
 from jinja2.visitor import NodeVisitor
 from toposort import toposort_flatten
 from yaml.reader import ReaderError
 
-from .date_helpers import (
-    archive_date,
-    date_to_xml_string,
-    list_archive_date,
-    long_date,
-    month_number_to_written_month,
-)
+from .date_helpers import (archive_date, date_to_xml_string, list_archive_date,
+                           long_date, month_number_to_written_month, year)
 
 module_dir = os.getcwd()
 os.chdir(module_dir)
@@ -46,7 +35,8 @@ original_file_to_permalink = {}
 logging.basicConfig(level=logging.INFO)
 
 
-from config import BASE_URL, HOOKS, LAYOUTS_BASE_DIR, ROOT_DIR, SITE_DIR, SITE_STATE
+from config import (BASE_URL, HOOKS, LAYOUTS_BASE_DIR, ROOT_DIR, SITE_DIR,
+                    SITE_STATE)
 
 ALLOWED_EXTENSIONS = ["html", "md", "css", "js", "txt", "xml"]
 
@@ -114,6 +104,7 @@ JINJA2_ENV.filters["date_to_xml_string"] = date_to_xml_string
 JINJA2_ENV.filters["archive_date"] = archive_date
 JINJA2_ENV.filters["list_archive_date"] = list_archive_date
 JINJA2_ENV.filters["month_number_to_written_month"] = month_number_to_written_month
+JINJA2_ENV.filters["year"] = year
 
 for file_name, hooks in HOOKS.get("template_filters", {}).items():
     for hook in hooks:
@@ -484,8 +475,9 @@ def render_page(file: str) -> None:
     state["pages"].append({"url": f"{BASE_URL}/{permalink}", "file": file})
 
 
-def generate_date_page_given_year_month_date(ymd_slug, posts, current_date_of_archive):
-    # ymd path str(year), str(month), str(day), should have leading zeros
+def generate_date_page_given_year_month_date(
+    ymd_slug, posts, current_date_of_archive, granularity
+) -> None:
     ymd_path = os.path.join(SITE_DIR, ymd_slug)
 
     make_any_nonexistent_directories(ymd_path)
@@ -502,6 +494,7 @@ def generate_date_page_given_year_month_date(ymd_slug, posts, current_date_of_ar
 
     page = deepcopy(all_parsed_pages[date_archive_layout])
     page["date"] = current_date_of_archive
+    date_archive_state["date_type"] = granularity
 
     date_archive_state["posts"] = [all_parsed_pages[post].metadata for post in posts]
 
@@ -582,6 +575,7 @@ def process_date_archives() -> None:
                     ymd_slug,
                     years[year][month][day],
                     datetime.datetime(year, month, day),
+                    "day",
                 )
 
             all_posts_in_month = [
@@ -592,6 +586,7 @@ def process_date_archives() -> None:
                 f"{year}/{str(month).zfill(2)}",
                 all_posts_in_month,
                 datetime.datetime(year, month, 1),
+                "month",
             )
 
         all_posts_in_year = [
@@ -602,9 +597,7 @@ def process_date_archives() -> None:
         ]
 
         generate_date_page_given_year_month_date(
-            str(year),
-            all_posts_in_year,
-            datetime.datetime(year, 1, 1),
+            str(year), all_posts_in_year, datetime.datetime(year, 1, 1), "year"
         )
 
         print(f"Generated date archives for {year}")
@@ -738,30 +731,29 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
         collections_to_files[data_dir] = []
         idx = 0
         print(f"Loading data from {data_file}...")
-        for record in tqdm.tqdm(all_data_files[data_file]):
+        for record in tqdm.tqdm(all_data_files[data_file][:5000]):
             if not record.get("slug"):
                 record["slug"] = str(idx)
                 idx += 1
-                logging.debug(
-                    f"Error: {data_file} {record} does not have a 'slug' key. This page will not be generated.",
-                    level=logging.CRITICAL,
-                )
-                continue
+                # print(
+                #     f"Error: {data_file} {record} does not have a 'slug' key. This page will not be generated.",
+                # )
+                # continue
 
-            if (
-                deps
-                and os.path.join(ROOT_DIR, data_dir, record.get("slug"), "index.html")
-                not in deps
-            ):
-                continue
-
-            record_as_string = orjson.dumps(record).decode()
+            # if (
+            #     deps
+            #     and os.path.join(ROOT_DIR, data_dir, record.get("slug"), "index.html")
+            #     not in deps
+            # ):
+            #     continue
 
             if not record.get("layout"):
                 record["layout"] = data_dir
 
             slug = record.get("slug")
             path = os.path.join(ROOT_DIR, data_dir, slug, "index.html")
+
+            record_as_string = orjson.dumps(record).decode()
 
             if (
                 data_file_integrity.get(slug)
@@ -774,13 +766,14 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
 
             try:
                 contents = "---\n" + record_as_string + "\n---\n"
-                all_opened_pages[path] = ""
-                all_page_contents[path] = loads(contents)
+                loaded_contents = loads(contents)
+                all_opened_pages[path] = contents
+                all_page_contents[path] = loaded_contents
+                all_parsed_pages[path] = loaded_contents
                 collections_to_files[data_dir].append(path)
             except ReaderError as e:
-                logging.debug(
+                print(
                     f"Error reading {data_file} {record}. This page will not be generated.",
-                    level=logging.CRITICAL,
                 )
                 # delete from all_page_contents
                 all_page_contents.pop(path, None)
@@ -801,7 +794,6 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
     """
 
     global state
-    global all_dependencies
 
     data_file_integrity = {}
 
@@ -809,8 +801,8 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
 
     if os.path.exists(DATA_FILES_DIR):
         for file in os.listdir(DATA_FILES_DIR):
-            if deps and file not in deps:
-                continue
+            # if deps and file not in deps:
+            #     continue
 
             if os.path.splitext(file)[-1].replace(".", "") == "json":
                 with open(os.path.join(DATA_FILES_DIR, file), "r") as f:
@@ -824,23 +816,6 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                 logging.debug(
                     f"Unsupported data file format: {file}", level=logging.CRITICAL
                 )
-
-    if incremental:
-        data = get_state_from_last_build()
-
-        if data:
-            all_dependencies = data.get("all_dependencies", {})
-            data_file_integrity = data.get("data_file_integrity", {})
-            changed_files = load_data_from_data_files(deps, data_file_integrity)
-            deps.extend(changed_files)
-            deps.extend(calculate_dependencies_from_saved_state(all_dependencies))
-
-            if len(deps) == 0:
-                print("No changes detected. Exiting.")
-                return
-    else:
-        changed_files = load_data_from_data_files(deps, data_file_integrity)
-        deps.extend(changed_files)
 
     if not os.path.exists(SITE_DIR):
         os.makedirs(SITE_DIR)
@@ -862,9 +837,6 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         if deps and page not in deps and not incremental:
             continue
 
-        if incremental and page not in deps and not page.startswith("pages/_"):
-            continue
-
         with open(page, "r") as f:
             contents = f.read()
             try:
@@ -880,9 +852,6 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                 raise e
 
     for page, contents in all_opened_pages.items():
-        # if deps and page not in deps:
-        #     continue
-
         dependencies, parsed_page = get_file_dependencies_and_evaluated_contents(
             page, contents
         )
@@ -908,6 +877,22 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                 deps.update(reverse_deps[dep])
 
         deps = new_deps
+
+    if incremental:
+        data = get_state_from_last_build()
+
+        if data:
+            data_file_integrity = data.get("data_file_integrity", {})
+            changed_files = load_data_from_data_files(deps, data_file_integrity)
+            deps.extend(changed_files)
+            deps.extend(calculate_dependencies_from_saved_state(all_dependencies))
+
+            if len(deps) == 0:
+                print("No changes detected. Exiting.")
+                return
+    else:
+        changed_files = load_data_from_data_files(deps, data_file_integrity)
+        deps.extend(changed_files)
 
     posts = [
         key for key in all_opened_pages.keys() if key.startswith(ROOT_DIR + "/posts")
@@ -994,13 +979,12 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         for hook in hooks:
             hook(state)
 
-    if incremental:
-        to_save = {
-            "last_build": state["build_timestamp"],
-            "data_file_integrity": data_file_integrity,
-        }
+    to_save = {
+        "last_build": state["build_timestamp"],
+        "data_file_integrity": data_file_integrity,
+    }
 
-        json.dump(to_save, open("state.json", "w"))
+    json.dump(to_save, open("state.json", "w"))
 
     print(
         f"Built site in \033[94m{(datetime.datetime.now() - start).total_seconds():.3f}s\033[0m ✨\n"

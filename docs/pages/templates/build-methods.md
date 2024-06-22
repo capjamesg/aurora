@@ -38,6 +38,8 @@ To run an incremental build, navigate to the root directory of your project and 
 
 <pre><code class="language-bash">aurora build --incremental</code></pre>
 
+<p class="callout-tip"><b>Tip</b>: Incremental builds support CSV and JSON data files.</p>
+
 ## Interactive, Incremental Build
 
 An interactive, incremental build generates your full site. It starts a web server through which you can preview pages. When you make a change to any file, the changed file -- and its dependencies -- are re-built and made available over the server. Any open browser tabs that are viewing the site will automatically refresh to show the changes.

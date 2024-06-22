@@ -24,3 +24,7 @@ def date_to_xml_string(date):
 
 def archive_date(date):
     return list_archive_date(date).strftime("%Y/%m")
+
+
+def year(date):
+    return list_archive_date(date).strftime("%Y")
