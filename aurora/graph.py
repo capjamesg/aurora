@@ -526,6 +526,74 @@ def generate_date_page_given_year_month_date(
         f.write(rendered_page.encode())
 
 
+def generate_paginated_page_for_collection(
+    collection: str, per_page: int, template: str
+) -> None:
+    """
+    Generate paginated pages for a collection.
+    """
+
+    if not state.get(collection):
+        return
+
+    print(f"Generating paginated pages for {collection}")
+
+    collection = state[collection]
+
+    if not collection:
+        return
+
+    collection = sorted(collection, key=lambda x: x["date"], reverse=True)
+
+    for i in tqdm.tqdm(range(0, len(collection), per_page)):
+        page = i // per_page + 1
+        paginated_collection = collection[i : i + per_page]
+
+        if page == 1:
+            paginated_collection_path = os.path.join(SITE_DIR, f"{template}/index.html")
+        else:
+            paginated_collection_path = os.path.join(
+                SITE_DIR, f"{template}/{page}/index.html"
+            )
+
+        make_any_nonexistent_directories(os.path.dirname(paginated_collection_path))
+
+        paginated_collection_layout = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/{template}.html"
+
+        paginated_collection_contents = all_opened_pages[paginated_collection_layout]
+
+        paginated_collection_state = state.copy()
+        paginated_collection_state[collection[0]["layout"]] = paginated_collection
+        paginated_collection_state["current_page"] = paginated_collection
+        paginated_collection_state["page_number"] = page
+
+        page = deepcopy(all_parsed_pages[paginated_collection_layout])
+        page[collection[0]["layout"]] = paginated_collection
+
+        fm = interpolate_front_matter(page, paginated_collection_state)
+
+        rendered_page = paginated_collection_contents.render(
+            paginated_collection_state,
+            site=state,
+            posts=paginated_collection,
+            page=paginated_collection_state,
+        )
+
+        rendered_page = recursively_build_page_template_with_front_matter(
+            paginated_collection_path,
+            fm,
+            paginated_collection_state,
+            loads(rendered_page).content,
+        )
+
+        with open(
+            paginated_collection_path,
+            "wb",
+            buffering=500,
+        ) as f:
+            f.write(rendered_page.encode())
+
+
 def process_date_archives() -> None:
     """
     Generate date archives for all posts.
@@ -735,17 +803,17 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
             if not record.get("slug"):
                 record["slug"] = str(idx)
                 idx += 1
-                # print(
-                #     f"Error: {data_file} {record} does not have a 'slug' key. This page will not be generated.",
-                # )
-                # continue
+                print(
+                    f"Error: {data_file} {record} does not have a 'slug' key. This page will not be generated.",
+                )
+                continue
 
-            # if (
-            #     deps
-            #     and os.path.join(ROOT_DIR, data_dir, record.get("slug"), "index.html")
-            #     not in deps
-            # ):
-            #     continue
+            if (
+                deps
+                and os.path.join(ROOT_DIR, data_dir, record.get("slug"), "index.html")
+                not in deps
+            ):
+                continue
 
             if not record.get("layout"):
                 record["layout"] = data_dir
@@ -973,6 +1041,11 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
             SITE_STATE.get("tag_template", "tag"),
             "tags",
             SITE_STATE.get("tag_slug_root", "tag"),
+        )
+
+    for collection_name, attributes in SITE_STATE.get("paginators", {}).items():
+        generate_paginated_page_for_collection(
+            collection_name, attributes["per_page"], attributes["template"]
         )
 
     for hooks in EVALUATED_POST_BUILD_HOOKS.values():
