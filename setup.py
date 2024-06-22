@@ -31,6 +31,7 @@ setuptools.setup(
         "click",
         "orjson",
         "tqdm",
+        "python-dateutil"
     ],
     include_package_data=True,
     package_data={"": ["templates/index.html"]},
