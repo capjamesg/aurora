@@ -7,6 +7,7 @@ if not os.path.exists("config.py"):
 
 import csv
 import datetime
+import hashlib
 import json
 import re
 from copy import deepcopy
@@ -14,7 +15,6 @@ from copy import deepcopy
 import orjson
 import pyromark
 import tqdm
-from frontmatter import Post as FrontMatterPost
 from frontmatter import loads
 from jinja2 import (
     Environment,
@@ -200,6 +200,10 @@ def get_file_dependencies_and_evaluated_contents(
 
     parsed_content["url"] = f"{BASE_URL}/{file_name.replace(ROOT_DIR + '/posts/', '')}"
 
+    parsed_content["permalink"] = (
+        f"/{parsed_content.get('permalink', parsed_content['slug']).strip('/')}/"
+    )
+
     if "categories" not in parsed_content:
         parsed_content["categories"] = []
 
@@ -241,9 +245,9 @@ def get_file_dependencies_and_evaluated_contents(
             date_slug = date_slug.replace("-", "/")
             slug_without_date = re.sub(r"\d{4}-\d{2}-\d{2}-", "", slug)
 
-            parsed_content[
-                "url"
-            ] = f"{BASE_URL}/{date_slug}/{slug_without_date.replace('.html', '').replace('.md', '')}/"
+            parsed_content["url"] = (
+                f"{BASE_URL}/{date_slug}/{slug_without_date.replace('.html', '').replace('.md', '')}/"
+            )
 
     if "layout" in parsed_content:
         dependencies.add(
@@ -362,7 +366,7 @@ def render_page(file: str) -> None:
         page_state["post"] = all_parsed_pages[file].metadata
 
         if not page_state["page"].get("permalink"):
-            page_state["page"]["permalink"] = slug.strip("/")
+            page_state["page"]["permalink"] = slug  # .strip("/")
 
         page_state["page"]["generated_on"] = datetime.datetime.now()
 
@@ -408,6 +412,8 @@ def render_page(file: str) -> None:
         page_state["categories"] = []
 
     state["categories"] = []
+
+    page_state["page"]["generated_from"] = file
 
     if page_state.get("page"):
         page_state["page"] = type("Page", (object,), page_state["page"])()
@@ -478,6 +484,55 @@ def render_page(file: str) -> None:
     state["pages"].append({"url": f"{BASE_URL}/{permalink}", "file": file})
 
 
+def generate_date_page_given_year_month_date(ymd_slug, posts, current_date_of_archive):
+    # ymd path str(year), str(month), str(day), should have leading zeros
+    ymd_path = os.path.join(SITE_DIR, ymd_slug)
+
+    make_any_nonexistent_directories(ymd_path)
+
+    date_archive_layout = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/date.html"
+
+    if not all_opened_pages.get(date_archive_layout):
+        return
+
+    date_archive_contents = all_opened_pages[date_archive_layout]
+
+    date_archive_state = state.copy()
+    date_archive_state["date"] = current_date_of_archive
+
+    page = deepcopy(all_parsed_pages[date_archive_layout])
+    page["date"] = current_date_of_archive
+
+    date_archive_state["posts"] = [all_parsed_pages[post].metadata for post in posts]
+
+    # order by date
+    date_archive_state["posts"] = sorted(
+        date_archive_state["posts"],
+        key=lambda x: x["date"],
+        reverse=True,
+    )
+
+    fm = interpolate_front_matter(page, date_archive_state)
+
+    rendered_page = date_archive_contents.render(
+        date_archive_state,
+        site=state,
+        posts=date_archive_state["posts"],
+        page=date_archive_state,
+    )
+
+    rendered_page = recursively_build_page_template_with_front_matter(
+        ymd_path, fm, date_archive_state, loads(rendered_page).content
+    )
+
+    with open(
+        os.path.join(ymd_path, "index.html"),
+        "wb",
+        buffering=500,
+    ) as f:
+        f.write(rendered_page.encode())
+
+
 def process_date_archives() -> None:
     """
     Generate date archives for all posts.
@@ -521,51 +576,38 @@ def process_date_archives() -> None:
             )
 
             for day in years[year][month]:
-                # ymd path str(year), str(month), str(day), should have leading zeros
-                ymd = f"{year}/{str(month).zfill(2)}/{str(day).zfill(2)}"
-                ymd_path = os.path.join(SITE_DIR, ymd)
+                ymd_slug = f"{year}/{str(month).zfill(2)}/{str(day).zfill(2)}"
 
-                make_any_nonexistent_directories(ymd_path)
-
-                date_archive_layout = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/date.html"
-
-                if not all_opened_pages.get(date_archive_layout):
-                    continue
-
-                date_archive_contents = all_opened_pages[date_archive_layout]
-
-                date_archive_state = state.copy()
-                current_date = datetime.datetime(year, month, day)
-                date_archive_state["date"] = current_date
-
-                page = deepcopy(all_parsed_pages[date_archive_layout])
-                page["date"] = current_date
-
-                date_archive_state["posts"] = [
-                    all_parsed_pages[post].metadata
-                    for post in posts
-                    if all_parsed_pages[post].metadata.get("date") == current_date
-                ]
-
-                fm = interpolate_front_matter(page, date_archive_state)
-
-                rendered_page = date_archive_contents.render(
-                    date_archive_state,
-                    site=state,
-                    posts=date_archive_state["posts"],
-                    page=date_archive_state,
+                generate_date_page_given_year_month_date(
+                    ymd_slug,
+                    years[year][month][day],
+                    datetime.datetime(year, month, day),
                 )
 
-                rendered_page = recursively_build_page_template_with_front_matter(
-                    ymd_path, fm, date_archive_state, loads(rendered_page).content
-                )
+            all_posts_in_month = [
+                post for day in years[year][month] for post in years[year][month][day]
+            ]
 
-                with open(
-                    os.path.join(ymd_path, "index.html"),
-                    "wb",
-                    buffering=500,
-                ) as f:
-                    f.write(rendered_page.encode())
+            generate_date_page_given_year_month_date(
+                f"{year}/{str(month).zfill(2)}",
+                all_posts_in_month,
+                datetime.datetime(year, month, 1),
+            )
+
+        all_posts_in_year = [
+            post
+            for month in years[year]
+            for day in years[year][month]
+            for post in years[year][month][day]
+        ]
+
+        generate_date_page_given_year_month_date(
+            str(year),
+            all_posts_in_year,
+            datetime.datetime(year, 1, 1),
+        )
+
+        print(f"Generated date archives for {year}")
 
 
 def process_archives(name: str, state_key_associated_with_name: str, path: str):
@@ -646,7 +688,7 @@ def get_state_from_last_build() -> dict:
     Get the state from the last build.
     """
     try:
-        data = orjson.loads(open("state.json", "r").read())
+        data = json.load(open("state.json", "r"))
     except Exception as e:
         print("Error reading state.json. Running a full build.")
         return {}
@@ -655,6 +697,9 @@ def get_state_from_last_build() -> dict:
 
 
 def calculate_dependencies_from_saved_state(all_dependencies: dict) -> list:
+    """
+    Read the saved state and compute dependencies of files that have changed since the last build.
+    """
     deps = []
 
     last_build = datetime.datetime.strptime(
@@ -668,9 +713,11 @@ def calculate_dependencies_from_saved_state(all_dependencies: dict) -> list:
             # must be of parsable extension
             if os.path.splitext(file)[-1].replace(".", "") not in ALLOWED_EXTENSIONS:
                 continue
-                
+
             if os.path.getmtime(path) > last_build.timestamp():
-                print(f"Detected change in {path}. Rebuilding this page and its dependencies.")
+                print(
+                    f"Detected change in {path}. Rebuilding this page and its dependencies."
+                )
 
                 dependencies_of_dependencies = [
                     i for i in all_dependencies if path in all_dependencies[i]
@@ -680,11 +727,17 @@ def calculate_dependencies_from_saved_state(all_dependencies: dict) -> list:
     return deps
 
 
-def load_data_from_data_files(deps: list) -> None:
+def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
+    """
+    Read all data files and create YAML file that can be used to generate pages.
+    """
+    changed_files = []
+
     for data_file in all_data_files:
         data_dir = data_file.replace(".json", "").replace(".csv", "")
         collections_to_files[data_dir] = []
         idx = 0
+        print(f"Loading data from {data_file}...")
         for record in tqdm.tqdm(all_data_files[data_file]):
             if not record.get("slug"):
                 record["slug"] = str(idx)
@@ -693,6 +746,7 @@ def load_data_from_data_files(deps: list) -> None:
                     f"Error: {data_file} {record} does not have a 'slug' key. This page will not be generated.",
                     level=logging.CRITICAL,
                 )
+                continue
 
             if (
                 deps
@@ -701,18 +755,26 @@ def load_data_from_data_files(deps: list) -> None:
             ):
                 continue
 
+            record_as_string = orjson.dumps(record).decode()
+
             if not record.get("layout"):
                 record["layout"] = data_dir
 
             slug = record.get("slug")
             path = os.path.join(ROOT_DIR, data_dir, slug, "index.html")
 
-            try:
-                contents = "---\n" + orjson.dumps(record).decode() + "\n---\n"
-                all_opened_pages[path] = ""
-                # construct an object called Metadata that can be set
-                record = {"metadata": record, "content": ""}
+            if (
+                data_file_integrity.get(slug)
+                != hashlib.sha1(record_as_string.encode()).hexdigest()
+            ):
+                changed_files.append(path)
+                data_file_integrity[slug] = hashlib.sha1(
+                    record_as_string.encode()
+                ).hexdigest()
 
+            try:
+                contents = "---\n" + record_as_string + "\n---\n"
+                all_opened_pages[path] = ""
                 all_page_contents[path] = loads(contents)
                 collections_to_files[data_dir].append(path)
             except ReaderError as e:
@@ -725,6 +787,9 @@ def load_data_from_data_files(deps: list) -> None:
                 all_opened_pages.pop(path, None)
                 continue
 
+    return changed_files
+
+
 def main(deps: list = [], watch: bool = False, incremental: bool = False) -> None:
     """
     The Aurora runtime.
@@ -735,31 +800,12 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
     - `aurora serve` to watch for changes in the `pages` directory and rebuild the site in real time.
     """
 
-    initially_incemental = incremental
-
     global state
     global all_dependencies
 
+    data_file_integrity = {}
+
     start = datetime.datetime.now()
-
-    if incremental:
-        data = get_state_from_last_build()
-
-        if data:
-            all_dependencies = data.get("all_dependencies", {})
-            deps = calculate_dependencies_from_saved_state(all_dependencies)
-
-            if len(deps) == 0:
-                print("No changes detected. Exiting.")
-                return
-
-    if not os.path.exists(SITE_DIR):
-        os.makedirs(SITE_DIR)
-    else:
-        if not deps and not incremental:
-            for root, _, files in os.walk(SITE_DIR):
-                for file in files:
-                    os.remove(os.path.join(root, file))
 
     if os.path.exists(DATA_FILES_DIR):
         for file in os.listdir(DATA_FILES_DIR):
@@ -779,6 +825,31 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                     f"Unsupported data file format: {file}", level=logging.CRITICAL
                 )
 
+    if incremental:
+        data = get_state_from_last_build()
+
+        if data:
+            all_dependencies = data.get("all_dependencies", {})
+            data_file_integrity = data.get("data_file_integrity", {})
+            changed_files = load_data_from_data_files(deps, data_file_integrity)
+            deps.extend(changed_files)
+            deps.extend(calculate_dependencies_from_saved_state(all_dependencies))
+
+            if len(deps) == 0:
+                print("No changes detected. Exiting.")
+                return
+    else:
+        changed_files = load_data_from_data_files(deps, data_file_integrity)
+        deps.extend(changed_files)
+
+    if not os.path.exists(SITE_DIR):
+        os.makedirs(SITE_DIR)
+    else:
+        if not deps and not incremental:
+            for root, _, files in os.walk(SITE_DIR):
+                for file in files:
+                    os.remove(os.path.join(root, file))
+
     for root, dirs, files in os.walk(ROOT_DIR):
         for file in files:
             ext = os.path.splitext(file)[-1].replace(".", "")
@@ -786,8 +857,6 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                 continue
 
             all_pages.append(os.path.join(root, file))
-
-    load_data_from_data_files(deps)
 
     for page in all_pages:
         if deps and page not in deps and not incremental:
@@ -880,6 +949,7 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
     else:
         iterator = tqdm.tqdm(dependencies)
 
+    print("Generating pages in memory...")
     for file in iterator:
         if os.path.isdir(file):
             for root, _, files in os.walk(file):
@@ -888,8 +958,9 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         else:
             render_page(file)
 
+    print("Saving files to disk...")
     if deps:
-        for file in state_to_write:
+        for file in tqdm.tqdm(state_to_write):
             if original_file_to_permalink.get(file) in deps:
                 with open(file, "wb", buffering=1000) as f:
                     f.write(state_to_write[file].encode())
@@ -903,7 +974,7 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                     with open(os.path.join(SITE_DIR, root, file), "wb") as f2:
                         f2.write(f.read())
 
-        for file in state_to_write:
+        for file in tqdm.tqdm(state_to_write):
             with open(file, "wb", buffering=1000) as f:
                 f.write(state_to_write[file].encode())
 
@@ -923,16 +994,13 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         for hook in hooks:
             hook(state)
 
-    if initially_incemental:
+    if incremental:
         to_save = {
-            "all_dependencies": {k: list(v) for k, v in all_dependencies.items()},
             "last_build": state["build_timestamp"],
+            "data_file_integrity": data_file_integrity,
         }
 
-        json.dump(
-            to_save,
-            open("state.json", "w")
-        )
+        json.dump(to_save, open("state.json", "w"))
 
     print(
         f"Built site in \033[94m{(datetime.datetime.now() - start).total_seconds():.3f}s\033[0m ✨\n"
