@@ -13,9 +13,9 @@ permalink: /hooks/
 <p>These functions are called &quot;hooks&quot;.</p>
 <p>There are three types of hooks, which run:</p>
 <ol>
-    <li>Immediately before a page is generated (pre-generation hook)</li>
     <li>As a jinja2 filter you can access on all pages (<code>template_filters</code> hook)</li>
-    <li>After your site has built.</li>
+    <li>Immediately before a page is generated (<code>pre_generation</code> hook)</li>
+    <li>After your site has built (<code>post_build</code> hook)
 </ol>
 
 
@@ -29,29 +29,6 @@ permalink: /hooks/
 </ol>
 
 <p>Below are instructions on how to define each type of hook.</p>
-
-<h2>Pre-Generation Hooks</h2>
-
-<p>Pre-generation hooks run immediately before a page is generated.</p>
-
-<p>These hooks are useful for adding state to a page for use in rendering (i.e. loading link prveiews from a cache, calculating reading times.)</p>
-
-<p>The type signature of this hook is:</p>
-
-<pre><code class="lang-python">
-def hook_name(file_name: str, page_state: dict, site_state: dict) -&gt; dict:
-    return page_state
-</code></pre>
-
-<p>You can register this hook in the <code>template_filter</code> hook:</p>
-
-<pre><code class="lang-python">
-HOOKS = {
-    "pre_generation": {
-        "example": ["hook_name"]
-    }
-}
-</code></pre>
 
 <h2>Filter Hooks</h2>
 
@@ -82,7 +59,30 @@ HOOKS = {
 &lt;h1&gt; "hello world" | hook_name &lt;/h1&gt;
 </code></pre>
 
-<h2>Post-Built Hooks</h2>
+<h2>Pre-Generation Hooks</h2>
+
+<p>Pre-generation hooks run immediately before a page is generated.</p>
+
+<p>These hooks are useful for adding state to a page for use in rendering (i.e. loading link prveiews from a cache, calculating reading times.)</p>
+
+<p>The type signature of this hook is:</p>
+
+<pre><code class="lang-python">
+def hook_name(file_name: str, page_state: dict, site_state: dict) -&gt; dict:
+    return page_state
+</code></pre>
+
+<p>You can register this hook in the <code>template_filter</code> hook:</p>
+
+<pre><code class="lang-python">
+HOOKS = {
+    "pre_generation": {
+        "example": ["hook_name"]
+    }
+}
+</code></pre>
+
+<h2>Post-Build Hooks</h2>
 
 <p>Post-build hooks run after your site has been built.</p>
 
