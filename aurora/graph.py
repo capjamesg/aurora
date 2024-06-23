@@ -254,9 +254,9 @@ def get_file_dependencies_and_evaluated_contents(
 
         if not layout_permalinks_to_idx.get(parsed_content["permalink"]):
             state[parsed_content["layout"] + "s"].append(parsed_content)
-            layout_permalinks_to_idx[parsed_content["permalink"]] = len(
-                state[parsed_content["layout"] + "s"]
-            ) - 1
+            layout_permalinks_to_idx[parsed_content["permalink"]] = (
+                len(state[parsed_content["layout"] + "s"]) - 1
+            )
         else:
             state[parsed_content["layout"] + "s"][
                 layout_permalinks_to_idx[parsed_content["permalink"]]
@@ -997,7 +997,6 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         if page.startswith("posts/"):
             state["posts"].append(parsed_page)
 
-
     posts = [
         key for key in all_opened_pages.keys() if key.startswith(ROOT_DIR + "/posts")
     ]
@@ -1024,10 +1023,16 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         key=lambda x: x["slug"],
         reverse=True,
     )
-    
-    all_dependencies = {k: v for k, v in all_dependencies.items() if not k.startswith("pages/_")}
 
-    dependencies = deps if incremental and len(deps) > 0 else list(toposort_flatten(all_dependencies))
+    all_dependencies = {
+        k: v for k, v in all_dependencies.items() if not k.startswith("pages/_")
+    }
+
+    dependencies = (
+        deps
+        if incremental and len(deps) > 0
+        else list(toposort_flatten(all_dependencies))
+    )
 
     dependencies = [
         dependency
