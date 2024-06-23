@@ -4,6 +4,8 @@ layout: default
 permalink: /pagination/
 ---
 
+# Pagination
+
 You can generate pagination pages for collections.
 
 This is ideal if you have a collection with many items that you want to split into multiple pages for ease of navigation.
