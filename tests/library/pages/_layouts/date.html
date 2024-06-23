@@ -2,6 +2,23 @@
 layout: default
 title: "Date Archive"
 ---
+{% if page.date_type == "year" %}
+  <h1>Posts from {{ page.date | year }}</h1>
+
+  <p>Below are the posts we wrote in {{ page.date | year }}.</p>
+{% endif %}
+
+{% if page.date_type == "month" %}
+  <h1>Posts from {{ page.date | archive_date }}</h1>
+
+  <p>Below are the posts we wrote in {{ page.date | archive_date }}.</p>
+{% endif %}
+
+{% if page.date_type == "day" %}
+  <h1>Posts from {{ page.date | long_date }}</h1>
+
+  <p>Below are the posts we wrote on {{ page.date | long_date }}.</p>
+{% endif %}
 
 <ul>
     {% for post in page.posts %}

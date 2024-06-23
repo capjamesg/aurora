@@ -124,23 +124,23 @@ def test_year_date_archive_generation():
         data = f.read()
 
     assert data.strip().replace(" ", "").replace("\n", "") == fixtures[
-        "date_archive.html"
+        "date_year.html"
     ].strip().replace(" ", "").replace("\n", "")
 
 def test_year_month_date_archive_generation():
-    with open(os.path.join(BASE_SITE_DIRECTORY, "2024/01/01/index.html")) as f:
+    with open(os.path.join(BASE_SITE_DIRECTORY, "2024/01/index.html")) as f:
         data = f.read()
 
     assert data.strip().replace(" ", "").replace("\n", "") == fixtures[
-        "date_archive.html"
+        "date_year_month.html"
     ].strip().replace(" ", "").replace("\n", "")
     
-def test_year_month_daydate_archive_generation():
+def test_year_month_day_date_archive_generation():
     with open(os.path.join(BASE_SITE_DIRECTORY, "2024/01/01/index.html")) as f:
         data = f.read()
 
     assert data.strip().replace(" ", "").replace("\n", "") == fixtures[
-        "date_archive.html"
+        "date_year_month_day.html"
     ].strip().replace(" ", "").replace("\n", "")
 
 def test_tag_archive_generation():

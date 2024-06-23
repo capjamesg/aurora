@@ -191,9 +191,9 @@ def get_file_dependencies_and_evaluated_contents(
 
     parsed_content["url"] = f"{BASE_URL}/{file_name.replace(ROOT_DIR + '/posts/', '')}"
 
-    parsed_content["permalink"] = (
-        f"/{parsed_content.get('permalink', parsed_content['slug']).strip('/')}/"
-    )
+    parsed_content[
+        "permalink"
+    ] = f"/{parsed_content.get('permalink', parsed_content['slug']).strip('/')}/"
 
     if "categories" not in parsed_content:
         parsed_content["categories"] = []
@@ -236,9 +236,9 @@ def get_file_dependencies_and_evaluated_contents(
             date_slug = date_slug.replace("-", "/")
             slug_without_date = re.sub(r"\d{4}-\d{2}-\d{2}-", "", slug)
 
-            parsed_content["url"] = (
-                f"{BASE_URL}/{date_slug}/{slug_without_date.replace('.html', '').replace('.md', '')}/"
-            )
+            parsed_content[
+                "url"
+            ] = f"{BASE_URL}/{date_slug}/{slug_without_date.replace('.html', '').replace('.md', '')}/"
 
     if "layout" in parsed_content:
         dependencies.add(
@@ -266,7 +266,6 @@ def make_any_nonexistent_directories(path: str) -> None:
 
 def interpolate_front_matter(front_matter: dict, state: dict) -> dict:
     """Evaluate front matter with Jinja2 to allow logic in front matter."""
-
     for key in front_matter.keys():
         if (
             isinstance(front_matter[key], str)
@@ -275,7 +274,9 @@ def interpolate_front_matter(front_matter: dict, state: dict) -> dict:
         ):
             item = front_matter[key]
 
-            item = JINJA2_ENV.from_string(item).render(page=front_matter, site=state)
+            item = JINJA2_ENV.from_string(item).render(
+                page=front_matter.get("page", front_matter), site=state
+            )
             front_matter[key] = item
 
     return front_matter
@@ -308,8 +309,8 @@ def recursively_build_page_template_with_front_matter(
 
         page_fm = type("Page", (object,), front_matter.metadata)()
 
-        if hasattr(page_fm, "page"):
-            page_fm = type("Page", (object,), page_fm.page)()
+        # if hasattr(page_fm, "page"):
+        #     page_fm = type("Page", (object,), page_fm.page)()
 
         current_contents = loads(
             all_opened_pages[layout_path].render(
@@ -319,6 +320,10 @@ def recursively_build_page_template_with_front_matter(
                 post=Post(front_matter.metadata),
             )
         ).content
+        if "reviews/0/" in file_name:
+            print(front_matter.metadata)
+            print(current_contents)
+        print(file_name, front_matter.metadata.get("title"), level)
 
         layout_front_matter = all_parsed_pages[layout_path]
 
@@ -347,6 +352,8 @@ def render_page(file: str) -> None:
         return
 
     page_state = state.copy()
+
+    print(file)
 
     if all_parsed_pages[file]:
         slug = file.split("/")[-1].replace(".html", "")
@@ -418,7 +425,7 @@ def render_page(file: str) -> None:
         if file.endswith(".md"):
             contents = pyromark.markdown(loads(all_opened_pages[file]).content)
         elif isinstance(contents, str):
-            # this happens for data files only, where content is in the
+            # this happens for data files only, where content does not exist
             contents = ""
         else:
             contents = loads(contents.render(page=page_state, site=state)).content
@@ -543,7 +550,7 @@ def generate_paginated_page_for_collection(
     if not collection:
         return
 
-    collection = sorted(collection, key=lambda x: x["date"], reverse=True)
+    collection = sorted(collection, key=lambda x: x.get("date", ""), reverse=True)
 
     for i in tqdm.tqdm(range(0, len(collection), per_page)):
         page = i // per_page + 1
@@ -804,9 +811,8 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
                 record["slug"] = str(idx)
                 idx += 1
                 print(
-                    f"Error: {data_file} {record} does not have a 'slug' key. This page will not be generated.",
+                    f"Error: {data_file} {record} does not have a 'slug' key. Assigning substitute ID."
                 )
-                continue
 
             if (
                 deps
@@ -915,7 +921,7 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
 
                 all_page_contents[page] = loads(contents)
             except Exception as e:
-                logging.debug(f"Error reading {page}", level=logging.CRITICAL)
+                # logging.debug(f"Error reading {page}", level=logging.CRITICAL)
                 # pass
                 raise e
 
@@ -989,7 +995,9 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         reverse=True,
     )
 
-    dependencies = list(toposort_flatten(all_dependencies)) if not deps else deps
+    dependencies = list(toposort_flatten(all_dependencies))
+
+    dependencies.extend(list(deps))
 
     dependencies = [
         dependency
@@ -1012,7 +1020,7 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
             render_page(file)
 
     print("Saving files to disk...")
-    if deps:
+    if not deps and incremental:
         for file in tqdm.tqdm(state_to_write):
             if original_file_to_permalink.get(file) in deps:
                 with open(file, "wb", buffering=1000) as f:
