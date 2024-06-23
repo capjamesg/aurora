@@ -1071,7 +1071,7 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
             with open(file, "wb", buffering=1000) as f:
                 f.write(state_to_write[file].encode())
 
-    if "posts" in deps:
+    if any(k.startswith("pages/") for k in all_dependencies):
         process_date_archives()
         process_archives(
             SITE_STATE.get("category_template", "category"),
