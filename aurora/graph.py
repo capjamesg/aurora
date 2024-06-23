@@ -189,7 +189,9 @@ def get_file_dependencies_and_evaluated_contents(
 
     parsed_content = all_page_contents[file_name]
 
-    parsed_content["slug"] = file_name.split("/")[-1].replace(".html", "")
+    if not parsed_content.get("slug"):
+        parsed_content["slug"] = file_name.split("/")[-1].replace(".html", "")
+
     parsed_content["contents"] = pyromark.markdown(parsed_content.content)
 
     parsed_content["url"] = f"{BASE_URL}/{file_name.replace(ROOT_DIR + '/posts/', '')}"
@@ -893,6 +895,7 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
     """
 
     global state
+    global all_dependencies
 
     data_file_integrity = {}
 
@@ -1019,6 +1022,8 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         key=lambda x: x["slug"],
         reverse=True,
     )
+    
+    all_dependencies = {k: v for k, v in all_dependencies.items() if not k.startswith("pages/_")}
 
     dependencies = deps if incremental and len(deps) > 0 else list(toposort_flatten(all_dependencies))
 

@@ -156,3 +156,4 @@ README.roboflow.txt
 .DS_Store
 _site/*
 docs/_site/*
+tests/library/_site/*
