@@ -168,21 +168,21 @@ def check_for_presence_of_state_file_after_build():
     assert os.path.exists("state.json")
 
 
-# def test_incremental_regeneration():
-#     generated_files = []
+def test_incremental_regeneration():
+    generated_files = []
 
-#     for root, _, files in os.walk("_site"):
-#         for file in files:
-#             generated_files.append(os.path.relpath(os.path.join(root, file), "_site"))
+    for root, _, files in os.walk("_site"):
+        for file in files:
+            generated_files.append(os.path.relpath(os.path.join(root, file), "_site"))
 
-#     os.system("aurora build --incremental")
+    os.system("aurora build --incremental")
 
-#     new_generated_files = []
+    new_generated_files = []
 
-#     for root, _, files in os.walk("_site"):
-#         for file in files:
-#             new_generated_files.append(
-#                 os.path.relpath(os.path.join(root, file), "_site")
-#             )
+    for root, _, files in os.walk("_site"):
+        for file in files:
+            new_generated_files.append(
+                os.path.relpath(os.path.join(root, file), "_site")
+            )
 
-#     assert set(generated_files) == set(new_generated_files)
+    assert set(generated_files) == set(new_generated_files)

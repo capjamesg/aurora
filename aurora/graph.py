@@ -982,7 +982,7 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                 return
     else:
         load_data_from_data_files(deps, data_file_integrity)
-        
+
     for page, contents in all_opened_pages.items():
         dependencies, parsed_page = get_file_dependencies_and_evaluated_contents(
             page, contents
@@ -998,7 +998,6 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         if page.startswith("posts/"):
             state["posts"].append(parsed_page)
 
-    print(all_dependencies)
 
     posts = [
         key for key in all_opened_pages.keys() if key.startswith(ROOT_DIR + "/posts")
@@ -1028,8 +1027,6 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
     )
 
     dependencies = list(toposort_flatten(all_dependencies)) + deps
-
-    print(dependencies)
 
     dependencies = [
         dependency
