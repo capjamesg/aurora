@@ -1,8 +1,6 @@
 import os
 import shutil
 
-import pytest
-
 TEST_FOLDER = os.path.join(os.getcwd(), "tests/library")
 BASE_SITE_DIRECTORY = os.path.join(TEST_FOLDER, "_site")
 FIXTURES_DIRECTORY = os.path.join(os.getcwd(), "tests/fixtures")
@@ -121,14 +119,29 @@ def test_post_build_hook():
     assert os.path.exists(os.path.join(BASE_SITE_DIRECTORY, "made-by.txt"))
 
 
-def test_date_archive_generation():
-    with open(os.path.join(BASE_SITE_DIRECTORY, "2024/01/01/index.html")) as f:
+def test_year_date_archive_generation():
+    with open(os.path.join(BASE_SITE_DIRECTORY, "2024/index.html")) as f:
         data = f.read()
 
     assert data.strip().replace(" ", "").replace("\n", "") == fixtures[
         "date_archive.html"
     ].strip().replace(" ", "").replace("\n", "")
 
+def test_year_month_date_archive_generation():
+    with open(os.path.join(BASE_SITE_DIRECTORY, "2024/01/01/index.html")) as f:
+        data = f.read()
+
+    assert data.strip().replace(" ", "").replace("\n", "") == fixtures[
+        "date_archive.html"
+    ].strip().replace(" ", "").replace("\n", "")
+    
+def test_year_month_daydate_archive_generation():
+    with open(os.path.join(BASE_SITE_DIRECTORY, "2024/01/01/index.html")) as f:
+        data = f.read()
+
+    assert data.strip().replace(" ", "").replace("\n", "") == fixtures[
+        "date_archive.html"
+    ].strip().replace(" ", "").replace("\n", "")
 
 def test_tag_archive_generation():
     with open(os.path.join(BASE_SITE_DIRECTORY, "tag/announcements/index.html")) as f:
@@ -137,3 +150,23 @@ def test_tag_archive_generation():
     assert data.strip().replace(" ", "").replace("\n", "") == fixtures[
         "tag_archive.html"
     ].strip().replace(" ", "").replace("\n", "")
+
+def test_collection_pagination():
+    with open(os.path.join(BASE_SITE_DIRECTORY, "rooms/index.html")) as f:
+        data = f.read()
+
+    assert data.strip().replace(" ", "").replace("\n", "") == fixtures[
+        "collection_pagination.html"
+    ].strip().replace(" ", "").replace("\n", "")
+
+def check_for_presence_of_state_file_after_build():
+    assert os.path.exists("state.json")
+
+def test_incremental_regeneration():
+    generated_files = os.listdir("_site")
+
+    os.system("aurora build --incremental")
+
+    new_generated_files = os.listdir("_site")
+
+    assert set(generated_files) == set(new_generated_files)

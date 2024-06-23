@@ -1,0 +1,12 @@
+---
+layout: default
+title: Rooms
+---
+
+<ul>
+    {% for room in page.rooms %}
+        <li>
+            {{ room.title }}
+        </li>
+    {% endfor %}
+</ul>
