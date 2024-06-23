@@ -30,6 +30,7 @@ os.chdir(module_dir)
 sys.path.append(module_dir)
 state_to_write = {}
 original_file_to_permalink = {}
+normalized_collection_permalinks = {}
 
 # print all logs
 logging.basicConfig(level=logging.INFO)
@@ -50,6 +51,8 @@ all_parsed_pages = {}
 dates = set()
 years = {}
 reverse_deps = {}
+collection_permalinks_to_idx = {}
+layout_permalinks_to_idx = {}
 
 # ensures a single template cannot have more than 10 levels of inheritance
 INHERITANCE_LIMIT = 10
@@ -247,14 +250,38 @@ def get_file_dependencies_and_evaluated_contents(
         if not state.get(parsed_content["layout"] + "s"):
             state[parsed_content["layout"] + "s"] = []
 
-        state[parsed_content["layout"] + "s"].append(parsed_content)
+        if not normalized_collection_permalinks.get(parsed_content["layout"] + "s"):
+            normalized_collection_permalinks[parsed_content["layout"] + "s"] = []
+
+        if not collection_permalinks_to_idx.get(parsed_content["permalink"]):
+            state[parsed_content["layout"] + "s"].append(parsed_content)
+            collection_permalinks_to_idx[parsed_content["permalink"]] = state[
+                parsed_content["layout"] + "s"
+            ].index(parsed_content)
+        else:
+            state[parsed_content["layout"] + "s"][
+                collection_permalinks_to_idx[parsed_content["permalink"]]
+            ] = parsed_content
 
     if "collection" in parsed_content:
         collection_normalized = parsed_content["collection"].lower()
         if not state.get(collection_normalized):
             state[collection_normalized] = []
 
-        state[collection_normalized].append(parsed_content)
+        if not normalized_collection_permalinks.get(collection_normalized):
+            normalized_collection_permalinks[collection_normalized] = []
+
+        # if permalink in collection_permalinks_to_idx, replace
+        if collection_permalinks_to_idx.get(parsed_content["permalink"]):
+            state[collection_normalized][
+                collection_permalinks_to_idx[parsed_content["permalink"]]
+            ] = parsed_content
+        else:
+            state[collection_normalized].append(parsed_content)
+
+        collection_permalinks_to_idx[parsed_content["permalink"]] = state[
+            parsed_content["layout"] + "s"
+        ].index(parsed_content)
 
     return dependencies, parsed_content
 
@@ -457,9 +484,7 @@ def render_page(file: str) -> None:
 
         return
 
-    if file.startswith("templates/") and any(
-        file.endswith(ext) for ext in [".html", ".md"]
-    ):
+    if any(file.endswith(ext) for ext in [".html", ".md"]):
         if hasattr(page_state["page"], "permalink"):
             permalink = os.path.join(
                 page_state["page"].permalink.strip("/"), "index.html"
@@ -549,16 +574,18 @@ def generate_paginated_page_for_collection(
 
     if not collection:
         return
-    
-    all_keys_contain_dates = all(
-        i.metadata.get("date") for i in collection
-    )
+
+    all_keys_contain_dates = all(i.metadata.get("date") for i in collection)
 
     # if all keys have dates
     if all_keys_contain_dates:
-        collection = sorted(collection, key=lambda x: x.metadata.get("date"), reverse=True)
+        collection = sorted(
+            collection, key=lambda x: x.metadata.get("date"), reverse=True
+        )
     else:
-        collection = sorted(collection, key=lambda x: x.metadata.get("title"), reverse=True)
+        collection = sorted(
+            collection, key=lambda x: x.metadata.get("title"), reverse=True
+        )
 
     for i in tqdm.tqdm(range(0, len(collection), per_page)):
         page = i // per_page + 1
@@ -1005,9 +1032,10 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         reverse=True,
     )
 
-    dependencies = list(toposort_flatten(all_dependencies))
-
-    dependencies.extend(list(deps))
+    if deps:
+        dependencies = deps
+    else:
+        dependencies = list(toposort_flatten(all_dependencies))
 
     dependencies = [
         dependency

@@ -127,6 +127,7 @@ def test_year_date_archive_generation():
         "date_year.html"
     ].strip().replace(" ", "").replace("\n", "")
 
+
 def test_year_month_date_archive_generation():
     with open(os.path.join(BASE_SITE_DIRECTORY, "2024/01/index.html")) as f:
         data = f.read()
@@ -134,7 +135,8 @@ def test_year_month_date_archive_generation():
     assert data.strip().replace(" ", "").replace("\n", "") == fixtures[
         "date_year_month.html"
     ].strip().replace(" ", "").replace("\n", "")
-    
+
+
 def test_year_month_day_date_archive_generation():
     with open(os.path.join(BASE_SITE_DIRECTORY, "2024/01/01/index.html")) as f:
         data = f.read()
@@ -142,6 +144,7 @@ def test_year_month_day_date_archive_generation():
     assert data.strip().replace(" ", "").replace("\n", "") == fixtures[
         "date_year_month_day.html"
     ].strip().replace(" ", "").replace("\n", "")
+
 
 def test_tag_archive_generation():
     with open(os.path.join(BASE_SITE_DIRECTORY, "tag/announcements/index.html")) as f:
@@ -151,6 +154,7 @@ def test_tag_archive_generation():
         "tag_archive.html"
     ].strip().replace(" ", "").replace("\n", "")
 
+
 def test_collection_pagination():
     with open(os.path.join(BASE_SITE_DIRECTORY, "rooms/index.html")) as f:
         data = f.read()
@@ -159,8 +163,10 @@ def test_collection_pagination():
         "collection_pagination.html"
     ].strip().replace(" ", "").replace("\n", "")
 
+
 def check_for_presence_of_state_file_after_build():
     assert os.path.exists("state.json")
+
 
 def test_incremental_regeneration():
     generated_files = os.listdir("_site")

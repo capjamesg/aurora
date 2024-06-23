@@ -18,5 +18,5 @@ HOOKS = {
 SITE_STATE = {
     "category_slug_root": "category",
     "tag_slug_root": "tag",
-    "paginators": {"rooms": {"per_page": 50, "template": "rooms"}}
+    "paginators": {"rooms": {"per_page": 50, "template": "rooms"}},
 }
