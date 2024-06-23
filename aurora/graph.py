@@ -1091,12 +1091,13 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         for hook in hooks:
             hook(state)
 
-    to_save = {
-        "last_build": state["build_timestamp"],
-        "data_file_integrity": data_file_integrity,
-    }
+    if incremental:
+        to_save = {
+            "last_build": state["build_timestamp"],
+            "data_file_integrity": data_file_integrity,
+        }
 
-    json.dump(to_save, open("state.json", "w"))
+        json.dump(to_save, open("state.json", "w"))
 
     print(
         f"Built site in \033[94m{(datetime.datetime.now() - start).total_seconds():.3f}s\033[0m ✨\n"
