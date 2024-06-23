@@ -968,7 +968,7 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
     if incremental:
         data = get_state_from_last_build()
 
-        if data:
+        if data != {}:
             data_file_integrity = data.get("data_file_integrity", {})
             changed_files = load_data_from_data_files(deps, data_file_integrity)
             deps.extend(changed_files)
@@ -977,6 +977,8 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
             if len(deps) == 0:
                 print("No changes detected. Exiting.")
                 return
+        else:
+            load_data_from_data_files(deps, data_file_integrity)
     else:
         load_data_from_data_files(deps, data_file_integrity)
 
