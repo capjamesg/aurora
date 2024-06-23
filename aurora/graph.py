@@ -368,7 +368,7 @@ def render_page(file: str) -> None:
         contents = all_opened_pages[file]
     except Exception as e:
         print(f"Error reading {file}")
-        raise e
+        # raise e
         return
 
     page_state = state.copy()
@@ -837,20 +837,13 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
         collections_to_files[data_dir] = []
         idx = 0
         print(f"Loading data from {data_file}...")
-        for record in tqdm.tqdm(all_data_files[data_file][:5000]):
+        for record in tqdm.tqdm(all_data_files[data_file]):
             if not record.get("slug"):
+                print(
+                    f"Note: {data_file} {record} does not have a 'slug' key. Assigning substitute ID."
+                )
                 record["slug"] = str(idx)
                 idx += 1
-                print(
-                    f"Error: {data_file} {record} does not have a 'slug' key. Assigning substitute ID."
-                )
-
-            # if (
-            #     deps
-            #     and os.path.join(ROOT_DIR, data_dir, record.get("slug"), "index.html")
-            #     not in deps
-            # ):
-            #     continue
 
             if not record.get("layout"):
                 record["layout"] = data_dir
@@ -876,7 +869,6 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
                 all_page_contents[path] = loaded_contents
                 all_parsed_pages[path] = loaded_contents
                 collections_to_files[data_dir].append(path)
-                print(f"Loaded {data_file} {record}.")
             except ReaderError as e:
                 print(
                     f"Error reading {data_file} {record}. This page will not be generated.",
@@ -884,6 +876,8 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
                 # delete from all_page_contents
                 all_page_contents.pop(path, None)
                 all_opened_pages.pop(path, None)
+                all_opened_pages.pop(path, None)
+                continue
 
     return changed_files
 
@@ -1026,7 +1020,7 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         reverse=True,
     )
 
-    dependencies = list(toposort_flatten(all_dependencies)) + deps
+    dependencies = deps if incremental and len(deps) > 0 else list(toposort_flatten(all_dependencies))
 
     dependencies = [
         dependency
@@ -1049,12 +1043,8 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
             render_page(file)
 
     print("Saving files to disk...")
-    if not deps and incremental:
-        for file in tqdm.tqdm(state_to_write):
-            if original_file_to_permalink.get(file) in deps:
-                with open(file, "wb", buffering=1000) as f:
-                    f.write(state_to_write[file].encode())
-    else:
+
+    if not incremental:
         for root, _, files in os.walk("assets"):
             for file in files:
                 path = os.path.join(SITE_DIR, root)
@@ -1064,10 +1054,17 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                     with open(os.path.join(SITE_DIR, root, file), "wb") as f2:
                         f2.write(f.read())
 
+    if incremental and deps:
+        for file in tqdm.tqdm(state_to_write):
+            if original_file_to_permalink.get(file) in deps:
+                with open(file, "wb", buffering=1000) as f:
+                    f.write(state_to_write[file].encode())
+    else:
         for file in tqdm.tqdm(state_to_write):
             with open(file, "wb", buffering=1000) as f:
                 f.write(state_to_write[file].encode())
 
+    if "posts" in deps:
         process_date_archives()
         process_archives(
             SITE_STATE.get("category_template", "category"),
