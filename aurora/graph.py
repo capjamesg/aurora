@@ -250,17 +250,14 @@ def get_file_dependencies_and_evaluated_contents(
         if not state.get(parsed_content["layout"] + "s"):
             state[parsed_content["layout"] + "s"] = []
 
-        if not normalized_collection_permalinks.get(parsed_content["layout"] + "s"):
-            normalized_collection_permalinks[parsed_content["layout"] + "s"] = []
-
-        if not collection_permalinks_to_idx.get(parsed_content["permalink"]):
+        if not layout_permalinks_to_idx.get(parsed_content["permalink"]):
             state[parsed_content["layout"] + "s"].append(parsed_content)
-            collection_permalinks_to_idx[parsed_content["permalink"]] = state[
-                parsed_content["layout"] + "s"
-            ].index(parsed_content)
+            layout_permalinks_to_idx[parsed_content["permalink"]] = len(
+                state[parsed_content["layout"] + "s"]
+            ) - 1
         else:
             state[parsed_content["layout"] + "s"][
-                collection_permalinks_to_idx[parsed_content["permalink"]]
+                layout_permalinks_to_idx[parsed_content["permalink"]]
             ] = parsed_content
 
     if "collection" in parsed_content:
@@ -280,7 +277,7 @@ def get_file_dependencies_and_evaluated_contents(
             state[collection_normalized].append(parsed_content)
 
         collection_permalinks_to_idx[parsed_content["permalink"]] = state[
-            parsed_content["layout"] + "s"
+            collection_normalized
         ].index(parsed_content)
 
     return dependencies, parsed_content
@@ -347,10 +344,6 @@ def recursively_build_page_template_with_front_matter(
                 post=Post(front_matter.metadata),
             )
         ).content
-        if "reviews/0/" in file_name:
-            print(front_matter.metadata)
-            print(current_contents)
-        print(file_name, front_matter.metadata.get("title"), level)
 
         layout_front_matter = all_parsed_pages[layout_path]
 
@@ -379,8 +372,6 @@ def render_page(file: str) -> None:
         return
 
     page_state = state.copy()
-
-    print(file)
 
     if all_parsed_pages[file]:
         slug = file.split("/")[-1].replace(".html", "")
@@ -484,7 +475,9 @@ def render_page(file: str) -> None:
 
         return
 
-    if any(file.endswith(ext) for ext in [".html", ".md"]):
+    if file.startswith("templates/") and any(
+        file.endswith(ext) for ext in [".html", ".md"]
+    ):
         if hasattr(page_state["page"], "permalink"):
             permalink = os.path.join(
                 page_state["page"].permalink.strip("/"), "index.html"
@@ -590,8 +583,8 @@ def generate_paginated_page_for_collection(
     for i in tqdm.tqdm(range(0, len(collection), per_page)):
         page = i // per_page + 1
         paginated_collection = collection[i : i + per_page]
+
         print(f"Generating paginated page {page} for {collection}")
-        print([i.metadata.get("title") for i in paginated_collection])
 
         if page == 1:
             paginated_collection_path = os.path.join(SITE_DIR, f"{template}/index.html")
@@ -836,6 +829,7 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
     """
     Read all data files and create YAML file that can be used to generate pages.
     """
+
     changed_files = []
 
     for data_file in all_data_files:
@@ -851,12 +845,12 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
                     f"Error: {data_file} {record} does not have a 'slug' key. Assigning substitute ID."
                 )
 
-            if (
-                deps
-                and os.path.join(ROOT_DIR, data_dir, record.get("slug"), "index.html")
-                not in deps
-            ):
-                continue
+            # if (
+            #     deps
+            #     and os.path.join(ROOT_DIR, data_dir, record.get("slug"), "index.html")
+            #     not in deps
+            # ):
+            #     continue
 
             if not record.get("layout"):
                 record["layout"] = data_dir
@@ -882,6 +876,7 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
                 all_page_contents[path] = loaded_contents
                 all_parsed_pages[path] = loaded_contents
                 collections_to_files[data_dir].append(path)
+                print(f"Loaded {data_file} {record}.")
             except ReaderError as e:
                 print(
                     f"Error reading {data_file} {record}. This page will not be generated.",
@@ -889,7 +884,6 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
                 # delete from all_page_contents
                 all_page_contents.pop(path, None)
                 all_opened_pages.pop(path, None)
-                continue
 
     return changed_files
 
@@ -962,21 +956,6 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                 # pass
                 raise e
 
-    for page, contents in all_opened_pages.items():
-        dependencies, parsed_page = get_file_dependencies_and_evaluated_contents(
-            page, contents
-        )
-        all_dependencies[page] = dependencies
-        all_parsed_pages[page] = parsed_page
-
-        for dependency in dependencies:
-            if dependency not in reverse_deps:
-                reverse_deps[dependency] = set()
-            reverse_deps[dependency].add(page)
-
-        if page.startswith("posts/"):
-            state["posts"].append(parsed_page)
-
     if deps:
         deps = set(deps)
         new_deps = []
@@ -1002,8 +981,24 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                 print("No changes detected. Exiting.")
                 return
     else:
-        changed_files = load_data_from_data_files(deps, data_file_integrity)
-        deps.extend(changed_files)
+        load_data_from_data_files(deps, data_file_integrity)
+        
+    for page, contents in all_opened_pages.items():
+        dependencies, parsed_page = get_file_dependencies_and_evaluated_contents(
+            page, contents
+        )
+        all_dependencies[page] = dependencies
+        all_parsed_pages[page] = parsed_page
+
+        for dependency in dependencies:
+            if dependency not in reverse_deps:
+                reverse_deps[dependency] = set()
+            reverse_deps[dependency].add(page)
+
+        if page.startswith("posts/"):
+            state["posts"].append(parsed_page)
+
+    print(all_dependencies)
 
     posts = [
         key for key in all_opened_pages.keys() if key.startswith(ROOT_DIR + "/posts")
@@ -1032,10 +1027,9 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         reverse=True,
     )
 
-    if deps:
-        dependencies = deps
-    else:
-        dependencies = list(toposort_flatten(all_dependencies))
+    dependencies = list(toposort_flatten(all_dependencies)) + deps
+
+    print(dependencies)
 
     dependencies = [
         dependency
