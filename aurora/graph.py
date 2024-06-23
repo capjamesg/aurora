@@ -549,12 +549,22 @@ def generate_paginated_page_for_collection(
 
     if not collection:
         return
+    
+    all_keys_contain_dates = all(
+        i.metadata.get("date") for i in collection
+    )
 
-    collection = sorted(collection, key=lambda x: x.get("date", ""), reverse=True)
+    # if all keys have dates
+    if all_keys_contain_dates:
+        collection = sorted(collection, key=lambda x: x.metadata.get("date"), reverse=True)
+    else:
+        collection = sorted(collection, key=lambda x: x.metadata.get("title"), reverse=True)
 
     for i in tqdm.tqdm(range(0, len(collection), per_page)):
         page = i // per_page + 1
         paginated_collection = collection[i : i + per_page]
+        print(f"Generating paginated page {page} for {collection}")
+        print([i.metadata.get("title") for i in paginated_collection])
 
         if page == 1:
             paginated_collection_path = os.path.join(SITE_DIR, f"{template}/index.html")
