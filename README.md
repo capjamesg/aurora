@@ -15,6 +15,13 @@ Aurora is a static site generator implemented in Python.
 
 [See a blog template that you can use with Aurora](https://github.com/capjamesg/aurora-blog-template).
 
+Aurora supports:
+
+- Creating content and pages with markdown, jinja2, and HTML
+- Static and incremental builds
+- Interactive building with hot reloading for development (up to < 300ms reload time)
+- Out-of-the-box support for generating date, category, and tag archive pages
+
 ## Demos
 
 ### Static Generation (1k+ pages)
