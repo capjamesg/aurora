@@ -13,6 +13,8 @@
 
 Aurora is a static site generator implemented in Python.
 
+[See a blog template that you can use with Aurora](https://github.com/capjamesg/aurora-blog-template).
+
 ## Demos
 
 ### Static Generation (1k+ pages)
