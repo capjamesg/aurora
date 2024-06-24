@@ -10,7 +10,7 @@ Below are templates you can use to get started with Aurora.
 
 <ul id="template-grid">
     <li>
-        <img src="https://github.com/capjamesg/aurora-blog-template/blob/main/blog.png" />
+        <img src="https://github.com/capjamesg/aurora-blog-template/raw/main/blog.png" />
         <a href="https://github.com/capjamesg/aurora-blog-template">Blog</a>
     </li>
     <li>
