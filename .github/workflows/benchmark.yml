@@ -31,12 +31,4 @@ jobs:
           echo "${{ matrix.os }} - Python ${{ matrix.python-version }}" > performance.txt
           echo "Commit: $(git rev-parse HEAD)" >> time_taken.txt
           cat time_output.txt | grep real | awk '{print $2}' >> performance.txt
-          echo "---" >> performance.txt
-          cp performance.txt ..
-      - name: Commit changes
-      - uses: EndBug/add-and-commit@v9
-        with:
-          author_name: capjamesg
-          author_email: jamesg@jamesg.blog
-          message: 'add performance data'
-          add: "performance.txt"
+          cat performance.txt
