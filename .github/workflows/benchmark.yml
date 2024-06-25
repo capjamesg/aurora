@@ -32,6 +32,8 @@ jobs:
           echo "Commit: $(git rev-parse HEAD)" >> time_taken.txt
           cat time_output.txt | grep real | awk '{print $2}' >> performance.txt
           echo "---" >> performance.txt
+          cp performance.txt ..
+          cd ..
           git config --local user.email "jamesg@jamesg.blog"
           git config --local user.name "capjamesg"
           git add performance.txt
