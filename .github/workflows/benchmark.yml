@@ -31,7 +31,7 @@ jobs:
           echo "${{ matrix.os }} - Python ${{ matrix.python-version }}" > performance.txt
           echo "Commit: $(git rev-parse HEAD)" >> time_taken.txt
           cat time_output.txt | grep real | awk '{print $2}' >> performance.txt
-          cat "---" >> performance.txt
+          echo "---" >> performance.txt
       - name: Commit and push time_taken.txt
         run: |
           git config --local user.email "jamesg@jamesg.blog"
