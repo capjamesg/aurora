@@ -299,11 +299,13 @@ def interpolate_front_matter(front_matter: dict, state: dict) -> dict:
             and key != "contents"
         ):
             item = front_matter[key]
-
-            item = JINJA2_ENV.from_string(item).render(
-                page=front_matter.get("page", front_matter), site=state
-            )
-            front_matter[key] = item
+            try:
+                item = JINJA2_ENV.from_string(item).render(
+                    page=front_matter.get("page", front_matter), site=state
+                )
+                front_matter[key] = item
+            except:
+                continue
 
     return front_matter
 
