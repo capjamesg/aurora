@@ -1,0 +1,30 @@
+name: Run benchmark (200k pages+)
+
+on: workflow_dispatch
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -e .
+          git clone https://github.com/capjamesg/aurora-hn-benchmark
+      - name: Build main site
+        env:  
+          SITE_ENV: ${{ secrets.SITE_ENV }}  
+        run: |
+          cd aurora-hn-benchmark
+          time aurora build
