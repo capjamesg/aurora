@@ -33,9 +33,10 @@ jobs:
           cat time_output.txt | grep real | awk '{print $2}' >> performance.txt
           echo "---" >> performance.txt
           cp performance.txt ..
-          cd ..
-          git config --local user.email "jamesg@jamesg.blog"
-          git config --local user.name "capjamesg"
-          git add performance.txt
-          git commit -m "Add build time for ${{ matrix.os }} - Python ${{ matrix.python-version }} ($(git rev-parse --short HEAD))"
-          git push
+      - name: Commit changes
+      - uses: EndBug/add-and-commit@v9
+        with:
+          author_name: capjamesg
+          author_email: jamesg@jamesg.blog
+          message: 'add performance data'
+          add: "performance.txt"
