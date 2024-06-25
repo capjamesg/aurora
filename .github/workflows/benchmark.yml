@@ -27,4 +27,15 @@ jobs:
           SITE_ENV: ${{ secrets.SITE_ENV }}  
         run: |
           cd aurora-hn-benchmark
-          time aurora build
+          { time aurora build; } 2> time_output.txt
+          echo "${{ matrix.os }} - Python ${{ matrix.python-version }}" > performance.txt
+          echo "Commit: $(git rev-parse HEAD)" >> time_taken.txt
+          cat time_output.txt | grep real | awk '{print $2}' >> performance.txt
+          cat "---" >> performance.txt
+      - name: Commit and push time_taken.txt
+        run: |
+          git config --local user.email "jamesg@jamesg.blog"
+          git config --local user.name "capjamesg"
+          git add performance.txt
+          git commit -m "Add build time for ${{ matrix.os }} - Python ${{ matrix.python-version }} ($(git rev-parse --short HEAD))"
+          git push
