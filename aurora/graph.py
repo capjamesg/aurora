@@ -841,9 +841,9 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
         print(f"Loading data from {data_file}...")
         for record in tqdm.tqdm(all_data_files[data_file]):
             if not record.get("slug"):
-                print(
-                    f"Note: {data_file} {record} does not have a 'slug' key. Assigning substitute ID."
-                )
+                # print(
+                #     f"Note: {data_file} {record} does not have a 'slug' key. Assigning substitute ID."
+                # )
                 record["slug"] = str(idx)
                 idx += 1
 
