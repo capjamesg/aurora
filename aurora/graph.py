@@ -35,7 +35,6 @@ normalized_collection_permalinks = {}
 # print all logs
 logging.basicConfig(level=logging.INFO)
 
-
 from config import (BASE_URL, HOOKS, LAYOUTS_BASE_DIR, ROOT_DIR, SITE_DIR,
                     SITE_STATE)
 
@@ -241,7 +240,7 @@ def get_file_dependencies_and_evaluated_contents(
             date_slug = date_slug.replace("-", "/")
             slug_without_date = re.sub(r"\d{4}-\d{2}-\d{2}-", "", slug)
 
-            parsed_content[
+            parsed_content["post"][
                 "url"
             ] = f"{BASE_URL}/{date_slug}/{slug_without_date.replace('.html', '').replace('.md', '')}/"
 
@@ -371,7 +370,7 @@ def render_page(file: str) -> None:
     try:
         contents = all_opened_pages[file]
     except Exception as e:
-        print(f"Error reading {file}")
+        # print(f"Error reading {file}")
         # raise e
         return
 
@@ -452,7 +451,7 @@ def render_page(file: str) -> None:
         else:
             contents = loads(contents.render(page=page_state, site=state)).content
     except Exception as e:
-        print(f"Error rendering {file}")
+        # print(f"Error rendering {file}")
         return
 
     rendered = recursively_build_page_template_with_front_matter(
@@ -711,6 +710,8 @@ def process_date_archives() -> None:
 
         print(f"Generated date archives for {year}")
 
+    state["years"] = years
+
 
 def process_archives(name: str, state_key_associated_with_name: str, path: str):
     """
@@ -747,7 +748,11 @@ def process_archives(name: str, state_key_associated_with_name: str, path: str):
             if category in post.get(state_key_associated_with_name, [])
         ]
 
+        print(f"Generating archive for {category}")
+
         fm = interpolate_front_matter(page, archive_state)
+
+        fm["url"] = f"{BASE_URL}/{path}/{slugify(category)}/"
 
         rendered_page = archive_contents.render(
             archive_state,
