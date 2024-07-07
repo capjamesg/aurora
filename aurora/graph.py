@@ -112,6 +112,12 @@ for file_name, hooks in HOOKS.get("template_filters", {}).items():
     for hook in hooks:
         JINJA2_ENV.filters[hook] = getattr(__import__(file_name), hook)
 
+md = pyromark.Markdown(extensions=(
+        pyromark.Extensions.ENABLE_FOOTNOTES
+        | pyromark.Extensions.ENABLE_SMART_PUNCTUATION
+        | pyromark.Extensions.ENABLE_HEADING_ATTRIBUTES
+    )
+)
 
 def slugify(value: str) -> str:
     """
@@ -191,7 +197,7 @@ def get_file_dependencies_and_evaluated_contents(
     if not parsed_content.get("slug"):
         parsed_content["slug"] = file_name.split("/")[-1].replace(".html", "")
 
-    parsed_content["contents"] = pyromark.markdown(parsed_content.content)
+    parsed_content["contents"] = md.convert(parsed_content.content)
 
     parsed_content["url"] = f"{BASE_URL}/{file_name.replace(ROOT_DIR + '/posts/', '')}"
 
@@ -234,7 +240,7 @@ def get_file_dependencies_and_evaluated_contents(
             parsed_content["page"]["date"] = parsed_content["post"]["date"]
 
             if "description" not in parsed_content:
-                parsed_content["description"] = pyromark.markdown(
+                parsed_content["description"] = md.convert(
                     parsed_content.content.split("\n")[0]
                 )
             date_slug = date_slug.replace("-", "/")
@@ -444,7 +450,7 @@ def render_page(file: str) -> None:
 
     try:
         if file.endswith(".md"):
-            contents = pyromark.markdown(loads(all_opened_pages[file]).content)
+            contents = md.convert(loads(all_opened_pages[file]).content)
         elif isinstance(contents, str):
             # this happens for data files only, where content does not exist
             contents = ""
