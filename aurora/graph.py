@@ -61,6 +61,7 @@ DATA_FILES_DIR = os.path.join(ROOT_DIR, "_data")
 
 EVALUATED_REGISTERED_TEMPLATE_GENERATION_HOOKS = {}
 EVALUATED_POST_BUILD_HOOKS = {}
+EVALUATED_POST_TEMPLATE_GENERATION_HOOKS = {}
 
 
 class Post:
@@ -82,6 +83,11 @@ for file_name, hooks in HOOKS.get("pre_template_generation", {}).items():
 
 for file_name, hooks in HOOKS.get("post_build", {}).items():
     EVALUATED_POST_BUILD_HOOKS[file_name] = [
+        getattr(__import__(file_name), func) for func in hooks
+    ]
+
+for file_name, hooks in HOOKS.get("post_template_generation", {}).items():
+    EVALUATED_POST_TEMPLATE_GENERATION_HOOKS[file_name] = [
         getattr(__import__(file_name), func) for func in hooks
     ]
 
@@ -406,7 +412,7 @@ def render_page(file: str) -> None:
                     ].content.split("\n")[0]
             page_state["is_article"] = True
 
-        if page_state.get("date"):
+        if page_state.get("date"):  
             date = page_state["date"]
             slug = re.sub(r"\d{4}-\d{2}-\d{2}-", "", file)
             slug = (
@@ -443,7 +449,7 @@ def render_page(file: str) -> None:
 
     try:
         if file.endswith(".md"):
-            contents = pyromark.markdown(loads(all_opened_pages[file]).content)
+            contents = pyromark.markdown(loads(contents).content)
         elif isinstance(contents, str):
             # this happens for data files only, where content does not exist
             contents = ""
@@ -456,6 +462,10 @@ def render_page(file: str) -> None:
     rendered = recursively_build_page_template_with_front_matter(
         file, all_parsed_pages[file], page_state, contents
     )
+
+    for hook, hooks in EVALUATED_POST_TEMPLATE_GENERATION_HOOKS.items():
+        for hook in hooks:
+            rendered = hook(file, page_state, state, rendered)
 
     file = file.replace(ROOT_DIR + "/", "")
 
