@@ -35,7 +35,6 @@ normalized_collection_permalinks = {}
 # print all logs
 logging.basicConfig(level=logging.INFO)
 
-
 from config import (BASE_URL, HOOKS, LAYOUTS_BASE_DIR, ROOT_DIR, SITE_DIR,
                     SITE_STATE)
 
@@ -119,6 +118,12 @@ for file_name, hooks in HOOKS.get("template_filters", {}).items():
     for hook in hooks:
         JINJA2_ENV.filters[hook] = getattr(__import__(file_name), hook)
 
+md = pyromark.Markdown(extensions=(
+        pyromark.Extensions.ENABLE_FOOTNOTES
+        | pyromark.Extensions.ENABLE_SMART_PUNCTUATION
+        | pyromark.Extensions.ENABLE_HEADING_ATTRIBUTES
+    )
+)
 
 def slugify(value: str) -> str:
     """
@@ -198,7 +203,7 @@ def get_file_dependencies_and_evaluated_contents(
     if not parsed_content.get("slug"):
         parsed_content["slug"] = file_name.split("/")[-1].replace(".html", "")
 
-    parsed_content["contents"] = pyromark.markdown(parsed_content.content)
+    parsed_content["contents"] = md.convert(parsed_content.content)
 
     parsed_content["url"] = f"{BASE_URL}/{file_name.replace(ROOT_DIR + '/posts/', '')}"
 
@@ -241,13 +246,13 @@ def get_file_dependencies_and_evaluated_contents(
             parsed_content["page"]["date"] = parsed_content["post"]["date"]
 
             if "description" not in parsed_content:
-                parsed_content["description"] = pyromark.markdown(
+                parsed_content["description"] = md.convert(
                     parsed_content.content.split("\n")[0]
                 )
             date_slug = date_slug.replace("-", "/")
             slug_without_date = re.sub(r"\d{4}-\d{2}-\d{2}-", "", slug)
 
-            parsed_content[
+            parsed_content["post"][
                 "url"
             ] = f"{BASE_URL}/{date_slug}/{slug_without_date.replace('.html', '').replace('.md', '')}/"
 
@@ -305,11 +310,13 @@ def interpolate_front_matter(front_matter: dict, state: dict) -> dict:
             and key != "contents"
         ):
             item = front_matter[key]
-
-            item = JINJA2_ENV.from_string(item).render(
-                page=front_matter.get("page", front_matter), site=state
-            )
-            front_matter[key] = item
+            try:
+                item = JINJA2_ENV.from_string(item).render(
+                    page=front_matter.get("page", front_matter), site=state
+                )
+                front_matter[key] = item
+            except:
+                continue
 
     return front_matter
 
@@ -375,7 +382,7 @@ def render_page(file: str) -> None:
     try:
         contents = all_opened_pages[file]
     except Exception as e:
-        print(f"Error reading {file}")
+        # print(f"Error reading {file}")
         # raise e
         return
 
@@ -449,14 +456,14 @@ def render_page(file: str) -> None:
 
     try:
         if file.endswith(".md"):
-            contents = pyromark.markdown(loads(contents).content)
+            contents = md.convert(loads(all_opened_pages[file]).content)
         elif isinstance(contents, str):
             # this happens for data files only, where content does not exist
             contents = ""
         else:
             contents = loads(contents.render(page=page_state, site=state)).content
     except Exception as e:
-        print(f"Error rendering {file}")
+        # print(f"Error rendering {file}")
         return
 
     rendered = recursively_build_page_template_with_front_matter(
@@ -719,6 +726,8 @@ def process_date_archives() -> None:
 
         print(f"Generated date archives for {year}")
 
+    state["years"] = years
+
 
 def process_archives(name: str, state_key_associated_with_name: str, path: str):
     """
@@ -755,7 +764,11 @@ def process_archives(name: str, state_key_associated_with_name: str, path: str):
             if category in post.get(state_key_associated_with_name, [])
         ]
 
+        print(f"Generating archive for {category}")
+
         fm = interpolate_front_matter(page, archive_state)
+
+        fm["url"] = f"{BASE_URL}/{path}/{slugify(category)}/"
 
         rendered_page = archive_contents.render(
             archive_state,
@@ -851,9 +864,9 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
         print(f"Loading data from {data_file}...")
         for record in tqdm.tqdm(all_data_files[data_file]):
             if not record.get("slug"):
-                print(
-                    f"Note: {data_file} {record} does not have a 'slug' key. Assigning substitute ID."
-                )
+                # print(
+                #     f"Note: {data_file} {record} does not have a 'slug' key. Assigning substitute ID."
+                # )
                 record["slug"] = str(idx)
                 idx += 1
 

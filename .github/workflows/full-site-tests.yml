@@ -1,0 +1,54 @@
+name: Test several sites built with Aurora
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "macos-latest"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -e .
+      - name: Build airport pianos
+        env:  
+          SITE_ENV: ${{ secrets.SITE_ENV }}  
+        run: |
+          git clone https://github.com/capjamesg/airport-pianos
+          cd airport-pianos
+          aurora build
+      - name: Build train station pianos
+        env:  
+          SITE_ENV: ${{ secrets.SITE_ENV }}  
+        run: |
+          git clone https://github.com/capjamesg/train-station-pianos
+          cd train-station-pianos
+          aurora build
+      - name: Build blog example
+        env:  
+          SITE_ENV: ${{ secrets.SITE_ENV }}  
+        run: |
+          git clone https://github.com/capjamesg/aurora-blog-template
+          cd aurora-blog-template
+          aurora build
+      - name: Build docs example
+        env:  
+          SITE_ENV: ${{ secrets.SITE_ENV }}  
+        run: |
+          git clone https://github.com/capjamesg/aurora-docs-template
+          cd aurora-docs-template
+          aurora build
