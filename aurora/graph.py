@@ -60,7 +60,6 @@ DATA_FILES_DIR = os.path.join(ROOT_DIR, "_data")
 
 EVALUATED_REGISTERED_TEMPLATE_GENERATION_HOOKS = {}
 EVALUATED_POST_BUILD_HOOKS = {}
-EVALUATED_POST_TEMPLATE_GENERATION_HOOKS = {}
 
 
 class Post:
@@ -82,11 +81,6 @@ for file_name, hooks in HOOKS.get("pre_template_generation", {}).items():
 
 for file_name, hooks in HOOKS.get("post_build", {}).items():
     EVALUATED_POST_BUILD_HOOKS[file_name] = [
-        getattr(__import__(file_name), func) for func in hooks
-    ]
-
-for file_name, hooks in HOOKS.get("post_template_generation", {}).items():
-    EVALUATED_POST_TEMPLATE_GENERATION_HOOKS[file_name] = [
         getattr(__import__(file_name), func) for func in hooks
     ]
 
@@ -207,10 +201,12 @@ def get_file_dependencies_and_evaluated_contents(
 
     parsed_content["url"] = f"{BASE_URL}/{file_name.replace(ROOT_DIR + '/posts/', '')}"
 
-    if not parsed_content.get("permalink"):
-        parsed_content[
-            "permalink"
-        ] = f"/{parsed_content.get('permalink', parsed_content['slug']).strip('/')}/"
+    if parsed_content.get("permalink") and parsed_content["permalink"].startswith("/"):
+        parsed_content["has_user_assigned_permalink"] = True
+
+    parsed_content[
+        "permalink"
+    ] = f"/{parsed_content.get('permalink', parsed_content['slug']).strip('/')}/"
 
     if "categories" not in parsed_content:
         parsed_content["categories"] = []
@@ -389,11 +385,14 @@ def render_page(file: str) -> None:
 
     page_state = state.copy()
 
+    has_user_assigned_permalink = False
+
     if all_parsed_pages[file]:
         slug = file.split("/")[-1].replace(".html", "")
 
         slug = slug.replace("posts/", "")
 
+        has_user_assigned_permalink = all_parsed_pages[file].metadata.get("has_user_assigned_permalink")
         page_state["page"] = all_parsed_pages[file].metadata
         page_state["post"] = all_parsed_pages[file].metadata
 
@@ -420,7 +419,7 @@ def render_page(file: str) -> None:
                     ].content.split("\n")[0]
             page_state["is_article"] = True
 
-        if page_state.get("date"):  
+        if page_state.get("date"):
             date = page_state["date"]
             slug = re.sub(r"\d{4}-\d{2}-\d{2}-", "", file)
             slug = (
@@ -471,10 +470,6 @@ def render_page(file: str) -> None:
         file, all_parsed_pages[file], page_state, contents
     )
 
-    for hook, hooks in EVALUATED_POST_TEMPLATE_GENERATION_HOOKS.items():
-        for hook in hooks:
-            rendered = hook(file, page_state, state, rendered)
-
     file = file.replace(ROOT_DIR + "/", "")
 
     if page_state.get("date"):
@@ -495,7 +490,7 @@ def render_page(file: str) -> None:
 
         return
 
-    if any(
+    if file.startswith("templates/") and any(
         file.endswith(ext) for ext in [".html", ".md"]
     ):
         if hasattr(page_state["page"], "permalink"):
@@ -504,6 +499,10 @@ def render_page(file: str) -> None:
             )
         else:
             permalink = file.replace("templates/", "")
+    elif has_user_assigned_permalink:
+        permalink = os.path.join(
+            page_state["page"].permalink.strip("/"), "index.html"
+        )
     else:
         permalink = file.replace("templates/", "")
 
