@@ -171,6 +171,18 @@ This file is called `pages/_data/coffee.json`.
 
 Every entry must have a `layout` key. This corresponds with the name of the template that will be used to render the page. For example, the `coffee` layout will be rendered using the `pages/_layouts/coffee.html` template.
 
+We need to create the `pages/_layouts/coffee.html` template to render our collection. Create a new file called `pages/_layouts/coffee.html` and add the following contents:
+
+```
+---
+title: Coffee List
+---
+
+% for item in site.coffee %}
+    {{ item.title }}
+{% endfor %}
+```
+
 Every entry must also have a `slug` key. This corresponds with the name of the page that will be generated. In the case above, one file will be created in the `_site` output directory: `_site/coffee/rosslyn-coffee/index.html`.
 
 ## Build Hooks (Advanced)
