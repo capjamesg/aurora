@@ -207,9 +207,10 @@ def get_file_dependencies_and_evaluated_contents(
 
     parsed_content["url"] = f"{BASE_URL}/{file_name.replace(ROOT_DIR + '/posts/', '')}"
 
-    parsed_content[
-        "permalink"
-    ] = f"/{parsed_content.get('permalink', parsed_content['slug']).strip('/')}/"
+    if not parsed_content.get("permalink"):
+        parsed_content[
+            "permalink"
+        ] = f"/{parsed_content.get('permalink', parsed_content['slug']).strip('/')}/"
 
     if "categories" not in parsed_content:
         parsed_content["categories"] = []
@@ -494,7 +495,7 @@ def render_page(file: str) -> None:
 
         return
 
-    if file.startswith("templates/") and any(
+    if any(
         file.endswith(ext) for ext in [".html", ".md"]
     ):
         if hasattr(page_state["page"], "permalink"):
@@ -516,7 +517,7 @@ def render_page(file: str) -> None:
     state_to_write[permalink] = rendered
     original_file_to_permalink[permalink] = original_file
 
-    state["pages"].append({"url": f"{BASE_URL}/{permalink}", "file": file})
+    state["pages"].append({"url": f"{BASE_URL}/{permalink}", "file": file, "rendered_html": contents, "title": page_state["page"].title if page_state.get("page") and hasattr(page_state["page"], "title") else ""})
 
 
 def generate_date_page_given_year_month_date(
@@ -1062,6 +1063,10 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         for dependency in dependencies
         if not dependency.startswith("pages/_")
     ]
+
+    print(dependencies)
+
+    dependencies = dependencies + ["pages/templates/book.html"]
 
     if watch:
         iterator = dependencies
