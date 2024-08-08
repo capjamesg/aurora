@@ -136,8 +136,10 @@ def read_file(file_name) -> str:
         result = chardet.detect(raw_data)
         encoding = result["encoding"]
 
-        with open(file_name, "r", encoding=encoding) as file:
-            return file.read()
+        print(encoding)
+
+        with open(file_name, "rb") as file:
+            return file.read().decode(encoding)
 
 
 def slugify(value: str) -> str:
