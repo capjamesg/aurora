@@ -8,3 +8,4 @@ progress
 click
 orjson
 tqdm
+chardet

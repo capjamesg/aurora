@@ -12,6 +12,7 @@ import json
 import re
 from copy import deepcopy
 
+import chardet
 import orjson
 import pyromark
 import tqdm
@@ -93,6 +94,8 @@ state = {
     "build_timestamp": datetime.datetime.now().isoformat(),
 }
 
+file_extensions = {}
+
 state.update(SITE_STATE)
 
 JINJA2_ENV = Environment(
@@ -112,12 +115,27 @@ for file_name, hooks in HOOKS.get("template_filters", {}).items():
     for hook in hooks:
         JINJA2_ENV.filters[hook] = getattr(__import__(file_name), hook)
 
-md = pyromark.Markdown(extensions=(
+md = pyromark.Markdown(
+    extensions=(
         pyromark.Extensions.ENABLE_FOOTNOTES
         | pyromark.Extensions.ENABLE_SMART_PUNCTUATION
         | pyromark.Extensions.ENABLE_HEADING_ATTRIBUTES
     )
 )
+
+
+def read_file(file_name) -> str:
+    try:
+        with open(file_name, "r") as file:
+            return file.read()
+    except UnicodeDecodeError:
+        raw_data = open(file_name, "rb").read()
+        result = chardet.detect(raw_data)
+        encoding = result["encoding"]
+
+        with open(file_name, "r", encoding=encoding) as file:
+            return file.read()
+
 
 def slugify(value: str) -> str:
     """
@@ -204,9 +222,9 @@ def get_file_dependencies_and_evaluated_contents(
     if parsed_content.get("permalink") and parsed_content["permalink"].startswith("/"):
         parsed_content["has_user_assigned_permalink"] = True
 
-    parsed_content[
-        "permalink"
-    ] = f"/{parsed_content.get('permalink', parsed_content['slug']).strip('/')}/"
+    parsed_content["permalink"] = (
+        f"/{parsed_content.get('permalink', parsed_content['slug']).strip('/')}/"
+    )
 
     if "categories" not in parsed_content:
         parsed_content["categories"] = []
@@ -392,7 +410,9 @@ def render_page(file: str) -> None:
 
         slug = slug.replace("posts/", "")
 
-        has_user_assigned_permalink = all_parsed_pages[file].metadata.get("has_user_assigned_permalink")
+        has_user_assigned_permalink = all_parsed_pages[file].metadata.get(
+            "has_user_assigned_permalink"
+        )
         page_state["page"] = all_parsed_pages[file].metadata
         page_state["post"] = all_parsed_pages[file].metadata
 
@@ -473,7 +493,7 @@ def render_page(file: str) -> None:
     file = file.replace(ROOT_DIR + "/", "")
 
     if page_state.get("date"):
-        file = f"{date.strftime('%Y/%m/%d')}/{slug}/index.html"
+        file = os.path.join(date.strftime("%Y/%m/%d"), f"/{slug}", "/index.html")
 
     if file.endswith(".md"):
         file = file[:-3] + ".html"
@@ -500,9 +520,7 @@ def render_page(file: str) -> None:
         else:
             permalink = file.replace("templates/", "")
     elif has_user_assigned_permalink:
-        permalink = os.path.join(
-            page_state["page"].permalink.strip("/"), "index.html"
-        )
+        permalink = os.path.join(page_state["page"].permalink.strip("/"), "index.html")
     else:
         permalink = file.replace("templates/", "")
 
@@ -516,7 +534,18 @@ def render_page(file: str) -> None:
     state_to_write[permalink] = rendered
     original_file_to_permalink[permalink] = original_file
 
-    state["pages"].append({"url": f"{BASE_URL}/{permalink}", "file": file, "rendered_html": contents, "title": page_state["page"].title if page_state.get("page") and hasattr(page_state["page"], "title") else ""})
+    state["pages"].append(
+        {
+            "url": f"{BASE_URL}/{permalink}",
+            "file": file,
+            "rendered_html": contents,
+            "title": (
+                page_state["page"].title
+                if page_state.get("page") and hasattr(page_state["page"], "title")
+                else ""
+            ),
+        }
+    )
 
 
 def generate_date_page_given_year_month_date(
@@ -661,7 +690,9 @@ def process_date_archives() -> None:
     - /2022/01/01/index.html
     """
     posts = [
-        key for key in all_opened_pages.keys() if key.startswith(ROOT_DIR + "/posts")
+        key
+        for key in all_opened_pages.keys()
+        if key.startswith(os.path.join(ROOT_DIR, "/posts"))
     ]
 
     dates = set()
@@ -801,9 +832,9 @@ def copy_asset_to_site(assets: list) -> None:
     for a in assets:
         print(f"Copying {a} to _site/assets/{a}")
         make_any_nonexistent_directories(os.path.join(SITE_DIR, "assets"))
-        with open(os.path.join("assets", a), "rb") as f:
-            with open(os.path.join(SITE_DIR, "assets", a), "wb") as f2:
-                f2.write(f.read())
+        asset = read_file(os.path.join("assets", a))
+        with open(os.path.join(SITE_DIR, "assets", a), "wb") as f2:
+            f2.write(asset)
 
 
 def get_state_from_last_build() -> dict:
@@ -926,17 +957,14 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
 
     if os.path.exists(DATA_FILES_DIR):
         for file in os.listdir(DATA_FILES_DIR):
-            # if deps and file not in deps:
-            #     continue
+            file_contents = read_file(os.path.join(DATA_FILES_DIR, file))
 
             if os.path.splitext(file)[-1].replace(".", "") == "json":
-                with open(os.path.join(DATA_FILES_DIR, file), "r") as f:
-                    all_data_files[file] = orjson.loads(f.read())
-                    state[file.replace(".json", "")] = all_data_files[file]
+                all_data_files[file] = orjson.loads(file_contents)
+                state[file.replace(".json", "")] = all_data_files[file]
             elif os.path.splitext(file)[-1].replace(".", "") == "csv":
-                with open(os.path.join(DATA_FILES_DIR, file), "r") as f:
-                    all_data_files[file] = list(csv.DictReader(f))
-                    state[file.replace(".csv", "")] = all_data_files[file]
+                all_data_files[file] = list(csv.DictReader(file_contents))  # TODO: test
+                state[file.replace(".csv", "")] = all_data_files[file]
             else:
                 logging.debug(
                     f"Unsupported data file format: {file}", level=logging.CRITICAL
@@ -950,7 +978,7 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                 for file in files:
                     os.remove(os.path.join(root, file))
 
-    for root, dirs, files in os.walk(ROOT_DIR):
+    for root, _, files in os.walk(ROOT_DIR):
         for file in files:
             ext = os.path.splitext(file)[-1].replace(".", "")
             if ext not in ALLOWED_EXTENSIONS:
@@ -962,19 +990,19 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         if deps and page not in deps and not incremental:
             continue
 
-        with open(page, "r") as f:
-            contents = f.read()
-            try:
-                if page.endswith(".md"):
-                    all_opened_pages[page] = contents
-                else:
-                    all_opened_pages[page] = JINJA2_ENV.from_string(contents)
+        contents = read_file(page)
 
-                all_page_contents[page] = loads(contents)
-            except Exception as e:
-                # logging.debug(f"Error reading {page}", level=logging.CRITICAL)
-                # pass
-                raise e
+        try:
+            if page.endswith(".md"):
+                all_opened_pages[page] = contents
+            else:
+                all_opened_pages[page] = JINJA2_ENV.from_string(contents)
+
+            all_page_contents[page] = loads(contents)
+        except Exception as e:
+            # logging.debug(f"Error reading {page}", level=logging.CRITICAL)
+            # pass
+            raise e
 
     if deps:
         deps = set(deps)
@@ -1021,7 +1049,9 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
             state["posts"].append(parsed_page)
 
     posts = [
-        key for key in all_opened_pages.keys() if key.startswith(ROOT_DIR + "/posts")
+        key
+        for key in all_opened_pages.keys()
+        if key.startswith(os.path.join(ROOT_DIR, "/posts"))
     ]
 
     for post in posts:
@@ -1063,8 +1093,6 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         if not dependency.startswith("pages/_")
     ]
 
-    print(dependencies)
-
     dependencies = dependencies + ["pages/templates/book.html"]
 
     if watch:
@@ -1089,9 +1117,10 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                 path = os.path.join(SITE_DIR, root)
                 if not os.path.exists(path):
                     os.makedirs(path)
-                with open(os.path.join(root, file), "rb") as f:
-                    with open(os.path.join(SITE_DIR, root, file), "wb") as f2:
-                        f2.write(f.read())
+                contents = read_file(os.path.join(root, file))
+
+                with open(os.path.join(SITE_DIR, root, file), "wb") as f2:
+                    f2.write(contents)
 
     if incremental and deps:
         for file in tqdm.tqdm(state_to_write):
