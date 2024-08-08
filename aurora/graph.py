@@ -133,7 +133,7 @@ def read_file(file_name) -> str:
         result = chardet.detect(raw_data)
         encoding = result["encoding"]
 
-        with open(file_name, "r", encoding=encoding) as file:
+        with open(file_name, "rb", encoding=encoding) as file:
             return file.read()
 
 
@@ -493,7 +493,7 @@ def render_page(file: str) -> None:
     file = file.replace(ROOT_DIR + "/", "")
 
     if page_state.get("date"):
-        file = os.path.join(date.strftime("%Y/%m/%d"), f"/{slug}", "/index.html")
+        file = os.path.join(date.strftime("%Y/%m/%d"), f"{slug}", "index.html")
 
     if file.endswith(".md"):
         file = file[:-3] + ".html"
@@ -893,6 +893,8 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
         collections_to_files[data_dir] = []
         idx = 0
         print(f"Loading data from {data_file}...")
+        print(type(all_data_files[data_file]))
+        print(all_data_files[data_file])
         for record in tqdm.tqdm(all_data_files[data_file]):
             if not record.get("slug"):
                 # print(
@@ -963,7 +965,7 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                 all_data_files[file] = orjson.loads(file_contents)
                 state[file.replace(".json", "")] = all_data_files[file]
             elif os.path.splitext(file)[-1].replace(".", "") == "csv":
-                all_data_files[file] = list(csv.DictReader(file_contents))  # TODO: test
+                all_data_files[file] = list(csv.DictReader(file_contents.split("\n")))
                 state[file.replace(".csv", "")] = all_data_files[file]
             else:
                 logging.debug(
@@ -1120,7 +1122,7 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                 contents = read_file(os.path.join(root, file))
 
                 with open(os.path.join(SITE_DIR, root, file), "wb") as f2:
-                    f2.write(contents)
+                    f2.write(contents.encode())
 
     if incremental and deps:
         for file in tqdm.tqdm(state_to_write):
