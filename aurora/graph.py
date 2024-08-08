@@ -125,6 +125,9 @@ md = pyromark.Markdown(
 
 
 def read_file(file_name) -> str:
+    """
+    Read a file and return its contents.
+    """
     try:
         with open(file_name, "r") as file:
             return file.read()
@@ -133,7 +136,7 @@ def read_file(file_name) -> str:
         result = chardet.detect(raw_data)
         encoding = result["encoding"]
 
-        with open(file_name, "rb", encoding=encoding) as file:
+        with open(file_name, "r", encoding=encoding) as file:
             return file.read()
 
 
@@ -494,6 +497,8 @@ def render_page(file: str) -> None:
 
     if page_state.get("date"):
         file = os.path.join(date.strftime("%Y/%m/%d"), f"{slug}", "index.html")
+
+    print(file)
 
     if file.endswith(".md"):
         file = file[:-3] + ".html"
