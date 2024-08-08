@@ -500,8 +500,6 @@ def render_page(file: str) -> None:
     if page_state.get("date"):
         file = os.path.join(date.strftime("%Y/%m/%d"), f"{slug}", "index.html")
 
-    print(file)
-
     if file.endswith(".md"):
         file = file[:-3] + ".html"
 
@@ -696,10 +694,11 @@ def process_date_archives() -> None:
     - /2022/01/index.html
     - /2022/01/01/index.html
     """
+    
     posts = [
         key
         for key in all_opened_pages.keys()
-        if key.startswith(os.path.join(ROOT_DIR, "/posts"))
+        if key.startswith(os.path.join(ROOT_DIR, "posts"))
     ]
 
     dates = set()
