@@ -238,7 +238,7 @@ REGISTERED_HOOKS = {
 To run the Aurora tests, run:
 
 ```
-pytest tests/state.py
+pytest tests/*.py
 ```
 
 ## Performance
