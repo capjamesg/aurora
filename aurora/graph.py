@@ -60,6 +60,7 @@ INHERITANCE_LIMIT = 10
 DATA_FILES_DIR = os.path.join(ROOT_DIR, "_data")
 
 EVALUATED_REGISTERED_TEMPLATE_GENERATION_HOOKS = {}
+EVALUATED_POST_TEMPLATE_GENERATION_HOOKS = {}
 EVALUATED_POST_BUILD_HOOKS = {}
 
 
@@ -77,6 +78,11 @@ class Post:
 
 for file_name, hooks in HOOKS.get("pre_template_generation", {}).items():
     EVALUATED_REGISTERED_TEMPLATE_GENERATION_HOOKS[file_name] = [
+        getattr(__import__(file_name), func) for func in hooks
+    ]
+
+for file_name, hooks in HOOKS.get("post_template_generation", {}).items():
+    EVALUATED_POST_TEMPLATE_GENERATION_HOOKS[file_name] = [
         getattr(__import__(file_name), func) for func in hooks
     ]
 
@@ -124,22 +130,23 @@ md = pyromark.Markdown(
 )
 
 
-def read_file(file_name) -> str:
+def read_file(file_name, mode = "r") -> str:
     """
     Read a file and return its contents.
     """
     try:
-        with open(file_name, "r") as file:
+        with open(file_name, mode) as file:
             return file.read()
-    except UnicodeDecodeError:
+    except UnicodeDecodeError as e:
         raw_data = open(file_name, "rb").read()
         result = chardet.detect(raw_data)
         encoding = result["encoding"]
 
-        print(encoding)
-
         with open(file_name, "rb") as file:
             return file.read().decode(encoding)
+    except Exception as e:
+        print(f"Error reading {file_name}")
+        raise e
 
 
 def slugify(value: str) -> str:
@@ -495,6 +502,10 @@ def render_page(file: str) -> None:
         file, all_parsed_pages[file], page_state, contents
     )
 
+    for hook, hooks in EVALUATED_POST_TEMPLATE_GENERATION_HOOKS.items():
+        for hook in hooks:
+            rendered = hook(file, page_state, state, rendered)
+
     file = file.replace(ROOT_DIR + "/", "")
 
     if page_state.get("date"):
@@ -838,7 +849,7 @@ def copy_asset_to_site(assets: list) -> None:
     for a in assets:
         print(f"Copying {a} to _site/assets/{a}")
         make_any_nonexistent_directories(os.path.join(SITE_DIR, "assets"))
-        asset = read_file(os.path.join("assets", a))
+        asset = read_file(os.path.join("assets", a), "rb")
         with open(os.path.join(SITE_DIR, "assets", a), "wb") as f2:
             f2.write(asset)
 
@@ -1125,10 +1136,10 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                 path = os.path.join(SITE_DIR, root)
                 if not os.path.exists(path):
                     os.makedirs(path)
-                contents = read_file(os.path.join(root, file))
+                contents = read_file(os.path.join(root, file), "rb")
 
                 with open(os.path.join(SITE_DIR, root, file), "wb") as f2:
-                    f2.write(contents.encode())
+                    f2.write(contents)
 
     if incremental and deps:
         for file in tqdm.tqdm(state_to_write):
