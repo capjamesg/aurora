@@ -130,7 +130,7 @@ md = pyromark.Markdown(
 )
 
 
-def read_file(file_name, mode = "r") -> str:
+def read_file(file_name, mode="r") -> str:
     """
     Read a file and return its contents.
     """
@@ -234,9 +234,9 @@ def get_file_dependencies_and_evaluated_contents(
     if parsed_content.get("permalink") and parsed_content["permalink"].startswith("/"):
         parsed_content["has_user_assigned_permalink"] = True
 
-    parsed_content["permalink"] = (
-        f"/{parsed_content.get('permalink', parsed_content['slug']).strip('/')}/"
-    )
+    parsed_content[
+        "permalink"
+    ] = f"/{parsed_content.get('permalink', parsed_content['slug']).strip('/')}/"
 
     if "categories" not in parsed_content:
         parsed_content["categories"] = []
@@ -705,7 +705,7 @@ def process_date_archives() -> None:
     - /2022/01/index.html
     - /2022/01/01/index.html
     """
-    
+
     posts = [
         key
         for key in all_opened_pages.keys()
