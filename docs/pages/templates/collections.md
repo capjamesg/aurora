@@ -52,7 +52,7 @@ You can create a data collection by:
 <p>
     To create a collection from a CSV file, add a new file to your site&#39;s
     <code>pages/_data</code> directory. This file should have a
-    <code>.json</code> extension.
+    <code>.csv</code> extension.
 </p>
 <p>Here is an example CSV file:</p>
 <pre><code class="lang-python">slug,layout,title
