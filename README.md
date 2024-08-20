@@ -178,7 +178,7 @@ We need to create the `pages/_layouts/coffee.html` template to render our collec
 title: Coffee List
 ---
 
-% for item in site.coffee %}
+{% for item in site.coffee %}
     {{ item.title }}
 {% endfor %}
 ```
