@@ -37,7 +37,7 @@ normalized_collection_permalinks = {}
 logging.basicConfig(level=logging.INFO)
 
 from config import (BASE_URL, HOOKS, LAYOUTS_BASE_DIR, ROOT_DIR, SITE_DIR,
-                    SITE_STATE)
+                    SITE_STATE, SITE_ENV)
 
 ALLOWED_EXTENSIONS = ["html", "md", "css", "js", "txt", "xml"]
 
@@ -98,6 +98,7 @@ state = {
     "build_date": today.strftime("%m-%d"),
     "pages": [],
     "build_timestamp": datetime.datetime.now().isoformat(),
+    "environment": SITE_ENV
 }
 
 file_extensions = {}
