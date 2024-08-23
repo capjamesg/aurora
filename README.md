@@ -22,7 +22,7 @@ Aurora supports:
 - Interactive building with hot reloading for development (up to < 300ms reload time)
 - Out-of-the-box support for generating date, category, and tag archive pages
 
-Aurora is supported on Linux and macOS. Aurora does not yet work on Windows, and there may be issues using Aurora on WSL. If you run into any issues with installation, please leave a GitHub Issue.
+Aurora is supported on Linux and macOS. Aurora does not yet work on Windows, and there may be issues using Aurora on WSL. If you run into any issues with installation, please create a GitHub Issue.
 
 ## Demos
 
