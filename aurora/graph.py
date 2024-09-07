@@ -234,6 +234,7 @@ def get_file_dependencies_and_evaluated_contents(
 
     if parsed_content.get("permalink") and parsed_content["permalink"].startswith("/"):
         parsed_content["has_user_assigned_permalink"] = True
+        parsed_content["url"] = f"{BASE_URL}/{parsed_content['permalink'].strip('/')}/"
 
     parsed_content[
         "permalink"
