@@ -214,14 +214,14 @@ def get_file_dependencies_and_evaluated_contents(
             dependencies.add(os.path.join(ROOT_DIR, include.template.value))
 
     for variable in included_variables:
-        if not variable.startswith("site."):
-            continue
-
         variable = variable.replace("site.", "")
 
         for collection in collections_to_files:
             if collections_to_files.get(collection):
                 dependencies.update(collections_to_files[collection])
+
+        if variable in state:
+            dependencies.add(variable)
 
     parsed_content = all_page_contents[file_name]
 
@@ -541,6 +541,22 @@ def render_page(file: str) -> None:
     else:
         permalink = file.replace("templates/", "")
 
+    permalink_without_index = permalink.split("index.html")[0]
+
+    state["pages"].append(
+        {
+            "url": f"{BASE_URL}/{permalink_without_index.rstrip('/')}/",
+            "file": file,
+            "rendered_html": contents,
+            "noindex": True if hasattr(page_state.get("page"), "noindex") else False,
+            "title": (
+                page_state["page"].title
+                if page_state.get("page") and hasattr(page_state["page"], "title")
+                else ""
+            ),
+        }
+    )
+
     permalink = os.path.join(SITE_DIR, permalink)
 
     if permalink.endswith(".html"):
@@ -550,19 +566,6 @@ def render_page(file: str) -> None:
 
     state_to_write[permalink] = rendered
     original_file_to_permalink[permalink] = original_file
-
-    state["pages"].append(
-        {
-            "url": f"{BASE_URL}/{permalink}",
-            "file": file,
-            "rendered_html": contents,
-            "title": (
-                page_state["page"].title
-                if page_state.get("page") and hasattr(page_state["page"], "title")
-                else ""
-            ),
-        }
-    )
 
 
 def generate_date_page_given_year_month_date(
