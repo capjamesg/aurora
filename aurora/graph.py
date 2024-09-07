@@ -154,7 +154,7 @@ def slugify(value: str) -> str:
     """
     Turn a string into a slug for use in saving data to a file.
     """
-    return value.lower().replace(" ", "-")
+    return value.lower().strip().replace(" ", "-")
 
 
 class VariableVisitor(NodeVisitor):
