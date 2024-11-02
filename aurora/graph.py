@@ -419,54 +419,56 @@ def render_page(file: str) -> None:
 
     has_user_assigned_permalink = False
 
-    if all_parsed_pages[file]:
-        slug = file.split("/")[-1].replace(".html", "")
+    if all_parsed_pages[file].get("skip"):
+        return
+    
+    slug = file.split("/")[-1].replace(".html", "")
 
-        slug = slug.replace("posts/", "")
+    slug = slug.replace("posts/", "")
 
-        has_user_assigned_permalink = all_parsed_pages[file].metadata.get(
-            "has_user_assigned_permalink"
-        )
-        page_state["page"] = all_parsed_pages[file].metadata
-        page_state["post"] = all_parsed_pages[file].metadata
+    has_user_assigned_permalink = all_parsed_pages[file].metadata.get(
+        "has_user_assigned_permalink"
+    )
+    page_state["page"] = all_parsed_pages[file].metadata
+    page_state["post"] = all_parsed_pages[file].metadata
 
-        if not page_state["page"].get("permalink"):
-            page_state["page"]["permalink"] = slug  # .strip("/")
+    if not page_state["page"].get("permalink"):
+        page_state["page"]["permalink"] = slug  # .strip("/")
 
-        page_state["page"]["generated_on"] = datetime.datetime.now()
+    page_state["page"]["generated_on"] = datetime.datetime.now()
 
-        if slug[0].isdigit():
-            date_slug = re.search(r"\d{4}-\d{2}-\d{2}", slug)
-            if date_slug:
-                date_slug = date_slug.group(0)
-                page_state["post"]["date"] = datetime.datetime.strptime(
-                    date_slug, "%Y-%m-%d"
-                )
-                page_state["post"]["full_date"] = page_state["post"]["date"].strftime(
-                    "%B %d, %Y"
-                )
-                page_state["date"] = page_state["post"]["date"]
-                page_state["full_date"] = page_state["post"]["full_date"]
-                if "description" not in page_state["post"]:
-                    page_state["post"]["description"] = all_parsed_pages[
-                        file
-                    ].content.split("\n")[0]
-            page_state["is_article"] = True
-
-        if page_state.get("date"):
-            date = page_state["date"]
-            slug = re.sub(r"\d{4}-\d{2}-\d{2}-", "", file)
-            slug = (
-                slug.replace("pages/posts/", "").replace(".md", "").replace(".html", "")
+    if slug[0].isdigit():
+        date_slug = re.search(r"\d{4}-\d{2}-\d{2}", slug)
+        if date_slug:
+            date_slug = date_slug.group(0)
+            page_state["post"]["date"] = datetime.datetime.strptime(
+                date_slug, "%Y-%m-%d"
             )
-            page_state["page"]["slug"] = slug
-            page_state["page"][
-                "url"
-            ] = f"{BASE_URL}/{date.strftime('%Y/%m/%d')}/{slug}/"
-        else:
-            page_state["page"]["url"] = f"{BASE_URL}/{slug}/"
+            page_state["post"]["full_date"] = page_state["post"]["date"].strftime(
+                "%B %d, %Y"
+            )
+            page_state["date"] = page_state["post"]["date"]
+            page_state["full_date"] = page_state["post"]["full_date"]
+            if "description" not in page_state["post"]:
+                page_state["post"]["description"] = all_parsed_pages[
+                    file
+                ].content.split("\n")[0]
+        page_state["is_article"] = True
 
-        page_state["url"] = page_state["page"]["url"]
+    if page_state.get("date"):
+        date = page_state["date"]
+        slug = re.sub(r"\d{4}-\d{2}-\d{2}-", "", file)
+        slug = (
+            slug.replace("pages/posts/", "").replace(".md", "").replace(".html", "")
+        )
+        page_state["page"]["slug"] = slug
+        page_state["page"][
+            "url"
+        ] = f"{BASE_URL}/{date.strftime('%Y/%m/%d')}/{slug}/"
+    else:
+        page_state["page"]["url"] = f"{BASE_URL}/{slug}/"
+
+    page_state["url"] = page_state["page"]["url"]
 
     if file == "pages/templates/index.html":
         page_state["url"] = BASE_URL
@@ -944,6 +946,7 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
             try:
                 contents = "---\n" + record_as_string + "\n---\n"
                 loaded_contents = loads(contents)
+                loaded_contents["skip"] = data_dir in SITE_STATE.get("disable_collection_single_page_generation", {})
                 all_opened_pages[path] = contents
                 all_page_contents[path] = loaded_contents
                 all_parsed_pages[path] = loaded_contents
@@ -1116,14 +1119,13 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         if not dependency.startswith("pages/_")
     ]
 
-    dependencies = dependencies + ["pages/templates/book.html"]
-
     if watch:
         iterator = dependencies
     else:
         iterator = tqdm.tqdm(dependencies)
 
     print("Generating pages in memory...")
+
     for file in iterator:
         if os.path.isdir(file):
             for root, _, files in os.walk(file):
