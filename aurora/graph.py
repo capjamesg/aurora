@@ -275,7 +275,7 @@ def get_file_dependencies_and_evaluated_contents(
             parsed_content["page"]["date"] = parsed_content["post"]["date"]
 
             if "description" not in parsed_content:
-                parsed_content["description"] = md.convert(
+                parsed_content["description"] = md.html(
                     parsed_content.content.split("\n")[0]
                 )
             date_slug = date_slug.replace("-", "/")
@@ -492,7 +492,7 @@ def render_page(file: str) -> None:
 
     try:
         if file.endswith(".md"):
-            contents = md.convert(loads(all_opened_pages[file]).content)
+            contents = md.html(loads(all_opened_pages[file]).content)
         elif isinstance(contents, str):
             # this happens for data files only, where content does not exist
             contents = ""
