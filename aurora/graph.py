@@ -228,7 +228,7 @@ def get_file_dependencies_and_evaluated_contents(
     if not parsed_content.get("slug"):
         parsed_content["slug"] = file_name.split("/")[-1].replace(".html", "")
 
-    parsed_content["contents"] = md.convert(parsed_content.content)
+    parsed_content["contents"] = md.html(parsed_content.content)
 
     parsed_content["url"] = f"{BASE_URL}/{file_name.replace(ROOT_DIR + '/posts/', '')}"
 
