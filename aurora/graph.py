@@ -123,7 +123,7 @@ for file_name, hooks in HOOKS.get("template_filters", {}).items():
         JINJA2_ENV.filters[hook] = getattr(__import__(file_name), hook)
 
 md = pyromark.Markdown(
-    extensions=(
+    options=(
         pyromark.Options.ENABLE_FOOTNOTES
         | pyromark.Options.ENABLE_SMART_PUNCTUATION
         | pyromark.Options.ENABLE_HEADING_ATTRIBUTES
