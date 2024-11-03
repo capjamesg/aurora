@@ -124,9 +124,9 @@ for file_name, hooks in HOOKS.get("template_filters", {}).items():
 
 md = pyromark.Markdown(
     extensions=(
-        pyromark.options.ENABLE_FOOTNOTES
-        | pyromark.options.ENABLE_SMART_PUNCTUATION
-        | pyromark.options.ENABLE_HEADING_ATTRIBUTES
+        pyromark.Options.ENABLE_FOOTNOTES
+        | pyromark.Options.ENABLE_SMART_PUNCTUATION
+        | pyromark.Options.ENABLE_HEADING_ATTRIBUTES
     )
 )
 
