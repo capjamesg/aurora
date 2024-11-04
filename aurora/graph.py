@@ -380,6 +380,8 @@ def recursively_build_page_template_with_front_matter(
         # if hasattr(page_fm, "page"):
         #     page_fm = type("Page", (object,), page_fm.page)()
 
+        page_fm["template"] = layout_path
+
         current_contents = loads(
             all_opened_pages[layout_path].render(
                 page=page_fm,
@@ -390,7 +392,6 @@ def recursively_build_page_template_with_front_matter(
         ).content
 
         layout_front_matter = all_parsed_pages[layout_path]
-        layout_front_matter.metadata["template"] = layout_path
 
         layout_front_matter["page"] = front_matter.metadata
         layout_front_matter["post"] = front_matter.metadata
