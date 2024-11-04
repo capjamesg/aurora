@@ -608,6 +608,11 @@ def generate_date_page_given_year_month_date(
         posts=date_archive_state["posts"],
         page=date_archive_state,
     )
+    
+    if not date_archive_state.get("page"):
+        date_archive_state["page"] = {}
+
+    date_archive_state["page"]["template"] = date_archive_layout
 
     rendered_page = recursively_build_page_template_with_front_matter(
         ymd_path, fm, date_archive_state, loads(rendered_page).content
@@ -685,6 +690,11 @@ def generate_paginated_page_for_collection(
             posts=paginated_collection,
             page=paginated_collection_state,
         )
+
+        if not paginated_collection_state.get("page"):
+            paginated_collection_state["page"] = {}
+
+        paginated_collection_state["page"]["template"] = paginated_collection_layout
 
         rendered_page = recursively_build_page_template_with_front_matter(
             paginated_collection_path,
@@ -830,6 +840,11 @@ def process_archives(name: str, state_key_associated_with_name: str, path: str):
             posts=archive_state["posts"],
             page=archive_state,
         )
+
+        if not archive_state.get("page"):
+            archive_state["page"] = {}
+
+        archive_state["page"]["template"] = archive_layout
 
         rendered_page = recursively_build_page_template_with_front_matter(
             archive_layout,
