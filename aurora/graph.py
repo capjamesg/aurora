@@ -374,13 +374,12 @@ def recursively_build_page_template_with_front_matter(
         layout_path = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/{layout}.html"
 
         front_matter.metadata = interpolate_front_matter(front_matter.metadata, state)
-
+        front_matter.metadata["template"] = layout_path
+    
         page_fm = type("Page", (object,), front_matter.metadata)()
 
         # if hasattr(page_fm, "page"):
         #     page_fm = type("Page", (object,), page_fm.page)()
-
-        page_fm["template"] = layout_path
 
         current_contents = loads(
             all_opened_pages[layout_path].render(
