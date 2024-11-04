@@ -355,8 +355,7 @@ def recursively_build_page_template_with_front_matter(
     front_matter: dict,
     state: dict,
     current_contents: str = "",
-    level: int = 0,
-    layout_paths: set = set({})
+    level: int = 0
 ) -> str:
     """
     Recursively build a page template with front matter.
@@ -374,15 +373,9 @@ def recursively_build_page_template_with_front_matter(
         layout = front_matter.metadata["layout"]
         layout_path = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/{layout}.html"
 
-        layout_paths.add(layout_path)
-
         front_matter.metadata = interpolate_front_matter(front_matter.metadata, state)
-        front_matter.metadata["template"] = layout_paths
     
         page_fm = type("Page", (object,), front_matter.metadata)()
-
-        # if hasattr(page_fm, "page"):
-        #     page_fm = type("Page", (object,), page_fm.page)()
 
         current_contents = loads(
             all_opened_pages[layout_path].render(
@@ -399,7 +392,7 @@ def recursively_build_page_template_with_front_matter(
         layout_front_matter["post"] = front_matter.metadata
 
         return recursively_build_page_template_with_front_matter(
-            file_name, layout_front_matter, state, current_contents.strip(), level + 1, layout_paths
+            file_name, layout_front_matter, state, current_contents.strip(), level + 1
         )
 
     return current_contents
@@ -505,9 +498,11 @@ def render_page(file: str) -> None:
     except Exception as e:
         # print(f"Error rendering {file}")
         return
+    
+    page_state["page"].template = file
 
     rendered = recursively_build_page_template_with_front_matter(
-        file, all_parsed_pages[file], page_state, contents, 0, set({})
+        file, all_parsed_pages[file], page_state, contents
     )
 
     for hook, hooks in EVALUATED_POST_TEMPLATE_GENERATION_HOOKS.items():
