@@ -356,6 +356,7 @@ def recursively_build_page_template_with_front_matter(
     state: dict,
     current_contents: str = "",
     level: int = 0,
+    layout_paths: list = []
 ) -> str:
     """
     Recursively build a page template with front matter.
@@ -373,8 +374,10 @@ def recursively_build_page_template_with_front_matter(
         layout = front_matter.metadata["layout"]
         layout_path = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/{layout}.html"
 
+        layout_paths.append(layout_path)
+
         front_matter.metadata = interpolate_front_matter(front_matter.metadata, state)
-        front_matter.metadata["template"] = layout_path
+        front_matter.metadata["template"] = layout_paths
     
         page_fm = type("Page", (object,), front_matter.metadata)()
 
@@ -396,7 +399,7 @@ def recursively_build_page_template_with_front_matter(
         layout_front_matter["post"] = front_matter.metadata
 
         return recursively_build_page_template_with_front_matter(
-            file_name, layout_front_matter, state, current_contents.strip(), level + 1
+            file_name, layout_front_matter, state, current_contents.strip(), level + 1, layout_paths
         )
 
     return current_contents
