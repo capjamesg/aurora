@@ -507,7 +507,7 @@ def render_page(file: str) -> None:
         return
 
     rendered = recursively_build_page_template_with_front_matter(
-        file, all_parsed_pages[file], page_state, contents, 0, []
+        file, all_parsed_pages[file], page_state, contents, 0, set({})
     )
 
     for hook, hooks in EVALUATED_POST_TEMPLATE_GENERATION_HOOKS.items():
