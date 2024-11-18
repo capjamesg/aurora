@@ -1,7 +1,7 @@
 jinja2
 livereload
 toposort
-pyromark~=0.6.0
+pyromark~=0.6.2
 python-frontmatter
 requests
 progress
