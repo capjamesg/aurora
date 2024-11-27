@@ -36,7 +36,7 @@ jobs:
         with:
           switches: -avzr
           path: "docs/_site/*"
-          remote_path: ${{ secrets.PATH }}
+          remote_path: ${{ secrets.SITE_PATH }}
           remote_host: ${{ secrets.SERVER_HOST }}
           remote_user: ${{ secrets.SERVER_USERNAME }}
           remote_key: ${{ secrets.KEY }}
