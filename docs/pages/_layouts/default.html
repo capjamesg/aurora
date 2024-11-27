@@ -537,7 +537,7 @@
     });
 </script>
 <body>
-    <div class="menu"><div></div><ul><a href="https://jamesg.blog/" class="jcb"><li>James' Coffee Blog</li></a><a href="https://aurora.jamesg.blog/" class="aurora"><li>Aurora</li></a><a href="https://jamesg.blog/jamesql/"><li style="background-color: #aaaaff; color: light-dark(white, var(--dark-background-color));;">JameSQL</li></a></ul></div>
+    <div class="menu"><div></div><ul><a href="https://jamesg.blog/" class="jcb"><li>James' Coffee Blog</li></a><a href="https://aurora.jamesg.blog/" class="aurora"><li style="background-color: #aaaaff; color: light-dark(white, var(--dark-background-color));">Aurora</li></a><a href="https://jamesg.blog/jamesql/"><li>JameSQL</li></a></ul></div>
     <nav><div class="logo-head"><img src="https://jamesg.blog/assets/mascot.svg" style="height: 2.5em;/*! margin-top: 1em; */margin-right: 1em;/*! float: right; */"><div style="/*! display: flex; *//*! padding-top: 1em; */padding-bottom: 0;/*! border-bottom: 1px solid black; */"><h1 style="/*! display: inline-block; */font-size: 1em;margin: 0;">JameSQL</h1>
     <p class="manual">User Manual</p></div></div><a href="#"><div class="nav-title"><h1 id="title">{{ page.title }}</h1> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><circle cx="128" cy="128" r="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="88" y1="128" x2="168" y2="128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="136 96 168 128 136 160" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg></div></a><span></span></nav>
     <div id="main">
@@ -549,31 +549,31 @@
                         <button type="submit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><circle cx="112" cy="112" r="80" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="168.57" y1="168.57" x2="224" y2="224" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg></button>
                     </form>
                 </search>
-                <a href="/"
+                <a href="{{ site.root_url }}"
                     ><li {% if page.permalink.strip() == "{{ site.root_url.strip() }}" %}class='current'{% endif %}>What is Aurora?</li></a
                 >
-                <a href="/start/"><li {% if page.permalink == "/start/" %}class='current'{% endif %}>Start a Website</li></a>
-                <a href="/blog/"><li {% if page.permalink == "/blog/" %}class='current'{% endif %}>Use Aurora as a Blog</li></a>
-                <a href="/structure/"><li {% if page.permalink == "/structure/" %}class='current'{% endif %}>Site Structure</li></a>
-                <a href="/configuration/"><li{% if page.permalink == "/configuration/" %}class='current'{% endif %}>Configuration</li></a>
-                <a href="/build-methods/"><li{% if page.permalink == "/build-methods/" %}class='current'{% endif %}>Build Methods</li></a>
-                <a href="/templating/"><li {% if page.permalink == "/templating/" %}class='current'{% endif %}>Templating with Jinja2</li></a>
-                <a href="/archives/"><li {% if page.permalink == "/archives/" %}class='current'{% endif %}>Date, Category, and Tag Archives</li></a>
+                <a href="{{ site.root_url }}start/"><li {% if page.permalink == "/start/" %}class='current'{% endif %}>Start a Website</li></a>
+                <a href="{{ site.root_url }}blog/"><li {% if page.permalink == "/blog/" %}class='current'{% endif %}>Use Aurora as a Blog</li></a>
+                <a href="{{ site.root_url }}structure/"><li {% if page.permalink == "/structure/" %}class='current'{% endif %}>Site Structure</li></a>
+                <a href="{{ site.root_url }}configuration/"><li{% if page.permalink == "/configuration/" %}class='current'{% endif %}>Configuration</li></a>
+                <a href="{{ site.root_url }}build-methods/"><li{% if page.permalink == "/build-methods/" %}class='current'{% endif %}>Build Methods</li></a>
+                <a href="{{ site.root_url }}templating/"><li {% if page.permalink == "/templating/" %}class='current'{% endif %}>Templating with Jinja2</li></a>
+                <a href="{{ site.root_url }}archives/"><li {% if page.permalink == "/archives/" %}class='current'{% endif %}>Date, Category, and Tag Archives</li></a>
                 <h3>Build Sites with Data</h3>
-                <a href="/collections/"><li {% if page.permalink == "/collections/" %}class='current'{% endif %}>Collections</li></a>
-                <a href="/pagination/"><li {% if page.permalink == "/pagination/" %}class='current'{% endif %}>Pagination</li></a>
+                <a href="{{ site.root_url }}collections/"><li {% if page.permalink == "/collections/" %}class='current'{% endif %}>Collections</li></a>
+                <a href="{{ site.root_url }}pagination/"><li {% if page.permalink == "/pagination/" %}class='current'{% endif %}>Pagination</li></a>
                 <h3>Advanced Features</h3>
-                <a href="/state/"><li {% if page.permalink == "/state/" %}class='current'{% endif %}>State</li></a>
-                <a href="/hooks/"><li {% if page.permalink == "/hooks/" %}class='current'{% endif %}>Hooks</li></a>
-                <a href="/dates/"><li {% if page.permalink == "/dates/" %}class='current'{% endif %}>Date Handling</li></a>
-                <a href="/permalinks/"><li {% if page.permalink == "/permalinks/" %}class='current'{% endif %}>Permalinks</li></a>
-                <a href="/sitemap/"><li {% if page.permalink == "/sitemap/" %}class='current'{% endif %}>Sitemap</li></a>
-                <a href="/robots/"><li {% if page.permalink == "/robots/" %}class='current'{% endif %}>robots.txt</li></a>
+                <a href="{{ site.root_url }}state/"><li {% if page.permalink == "/state/" %}class='current'{% endif %}>State</li></a>
+                <a href="{{ site.root_url }}hooks/"><li {% if page.permalink == "/hooks/" %}class='current'{% endif %}>Hooks</li></a>
+                <a href="{{ site.root_url }}dates/"><li {% if page.permalink == "/dates/" %}class='current'{% endif %}>Date Handling</li></a>
+                <a href="{{ site.root_url }}permalinks/"><li {% if page.permalink == "/permalinks/" %}class='current'{% endif %}>Permalinks</li></a>
+                <a href="{{ site.root_url }}sitemap/"><li {% if page.permalink == "/sitemap/" %}class='current'{% endif %}>Sitemap</li></a>
+                <a href="{{ site.root_url }}robots/"><li {% if page.permalink == "/robots/" %}class='current'{% endif %}>robots.txt</li></a>
                 <h3>Demos</h3>
-                <a href="/users/"><li {% if page.permalink == "/users/" %}class='current'{% endif %}>Sites Built with Aurora</li></a>
-                <a href="/templates/"><li {% if page.permalink == "/templates/" %}class='current'{% endif %}>Aurora Templates</li></a>
-                <a href="/performance/"><li {% if page.permalink == "/performance/" %}class='current'{% endif %}>Performance</li></a>
-                <a href="/design/"><li {% if page.permalink == "/design/" %}class='current'{% endif %}>Aurora Design</li></a>
+                <a href="{{ site.root_url }}users/"><li {% if page.permalink == "/users/" %}class='current'{% endif %}>Sites Built with Aurora</li></a>
+                <a href="{{ site.root_url }}templates/"><li {% if page.permalink == "/templates/" %}class='current'{% endif %}>Aurora Templates</li></a>
+                <a href="{{ site.root_url }}performance/"><li {% if page.permalink == "/performance/" %}class='current'{% endif %}>Performance</li></a>
+                <a href="{{ site.root_url }}design/"><li {% if page.permalink == "/design/" %}class='current'{% endif %}>Aurora Design</li></a>
             </ul>
         </aside>
         <main>
