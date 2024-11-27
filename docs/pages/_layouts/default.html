@@ -1,269 +1,606 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>{{ page.title }}</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        <meta name="description" content="Aurora: An extensible, Python-based static site generator." />
-        <meta name="author" content="Aurora" />
-        <meta name="keywords" content="Aurora, static site generator, Python" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ page.title }} | Aurora User Manual</title>
 
-        <meta property="og:image" content="https://screenshots.jamesg.blog?url={{ page.url }}" />
-        <meta property="og:title" content="{{ page.title }} - Aurora Documentation" />
-        <meta property="og:description" content="Aurora: An extensible, Python-based static site generator." />
-        <meta property="og:url" content="{{ page.url }}" />
+    <meta name="description" content="Aurora: An extensible, Python-based static site generator." />
+    <meta name="author" content="Aurora" />
+    <meta name="keywords" content="Aurora, static site generator, Python" />
 
-        <link rel="icon" href="{{ site.root_url }}/assets/aurora-logo.png" type="image/x-icon" />
+    <meta property="og:image" content="https://screenshots.jamesg.blog?url={{ page.url }}" />
+    <meta property="og:title" content="{{ page.title }} - Aurora Documentation" />
+    <meta property="og:description" content="Aurora: An extensible, Python-based static site generator." />
+    <meta property="og:url" content="{{ page.url }}" />
 
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
-            rel="stylesheet"
-        />
-        <link href="{{ site.root_url }}/assets/prism.css" rel="stylesheet" />
-        <script src="{{ site.root_url }}/assets/prism.js"></script>
-        <style>
-            * {
-                font-family: "Inter", sans-serif;
-                line-height: 1.6;
-            }
-            html,
-            body {
-                margin: 0;
-                background-color: rgb(246, 245, 240);
-            }
-            nav p,
-            nav ul {
-                margin: 0;
-            }
-            nav {
-                background-color: #aaaaff;
-                color: black;
-                display: flex;
-                justify-content: space-between;
-            }
-            nav ul {
-                display: flex;
-                list-style-type: none;
-            }
-            nav a {
-                color: black;
-                text-decoration: none;
-                margin-right: 1rem;
-            }
-            nav a:hover,
-            nav a:focus {
-                text-decoration: underline;
-            }
-            aside ul {
-                list-style-type: none;
-                padding: 0;
-            }
-            main {
-                max-width: 60em;
-                margin: auto;
-                justify-content: space-between;
-                display: grid;
-                grid-template-columns: 1fr 3fr;
-                border: 1px solid #ccc;
-            }
-            nav {
-                max-width: 60em;
-                margin: auto;
-            }
+    <link rel="icon" href="{{ site.root_url }}/assets/aurora-logo.png" type="image/x-icon" />
 
-            .current {
-                font-weight: bold;
-                font-style: italic;
-                text-decoration: underline;
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
+        rel="stylesheet"
+    />
+    <link href="{{ site.root_url }}/assets/prism.css" rel="stylesheet" />
+    <script src="{{ site.root_url }}/assets/prism.js"></script>
+
+    <link href="https://jamesg.blog/assets/mascot.svg" rel="icon">
+
+    <style>
+        :root {  
+          --light-background-color: #f7f7f7;
+          --light-foreground-color: black;
+          --light-border-color: lightgrey;
+          --primary-color: #aaaaff;
+          --border-radius: var(--medium-space);
+          --dark-background-color: #242424;
+          --dark-code-color: #06006e;
+          --dark-foreground-color: #d7d7d7;
+          --light-focus-color: rgb(255, 225, 116);
+          --dark-focus-color: #1e3cb1;
+          --dark-border-color: #747474;
+          --small-space: 0.1rem;
+          --medium-space: 0.5rem;
+          --large-space: 1rem;
+        }
+        html {
+            color-scheme: light dark;
+        }
+        .search {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .search li {
+            padding-left: 1em;
+            padding-right: 1em;
+            padding-top: 0.5em;
+            padding-bottom: 0.5em;
+            background-color: light-dark(white, var(--dark-background-color));;
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .search li:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        .callout {
+            background-color: rgba(65, 105, 225, 0.198);
+            border-left: 3px solid #aaaaff;
+            padding: 1em;
+        }
+        .warning {
+            background-color: rgba(255, 165, 0, 0.198);
+            border-left: 3px solid orange;
+            padding: 1em;
+        }
+        @font-face {
+            font-family: "Standard";
+            src: url("standard-book-webfont.woff2");
+            font-display: swap;
+        }
+        html {
+            background-color: #f9f9f9;
+            font-family: "Standard", sans-serif;
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+            border-top: 5px solid #aaaaff;
+            position: fixed;
+            width: 100%;
+        }
+        h1, h2 {
+            margin-bottom: 0.25em;
+            padding-bottom: 0;
+        }
+        h2 {
+            margin-top: 1.25em;
+        }
+        h1 + p, h2 + p {
+            margin-top: 0;
+            padding-top: 0;
+        }
+        body {
+            padding: 0;
+            margin: 0;
+        }
+        * {
+            line-height: 1.5;
+            color: light-dark(black, var(--dark-foreground-color));
+        }
+        #main {
+            display: grid;
+            grid-template-columns: 1fr 4fr;
+            background-color: light-dark(white, var(--dark-background-color));
+        }
+        article {
+            padding-bottom: 3em;
+        }
+        h3 {
+            text-transform: uppercase;
+            font-size: 0.9em;
+            margin-bottom: 0.25em;
+            margin-top: 1.5em;
+        }
+        aside {
+            border-right: 0.5px solid light-dark(rgb(57, 57, 57), var(--dark-border-color));
+            padding-right: 1.5em;
+        }
+        .right-sidebar {
+            position: sticky;
+            top: 1em;
+            padding-top: 1em;
+        }
+        .toc h3 {
+            margin: 0;
+        }
+        .pages ul {
+            list-style-type: none;
+            box-sizing: border-box;
+            max-width: 100%;
+            padding-left: 1em;
+        }
+        .pages li {
+            list-style-type: none;
+            padding: 0.5em 0;
+            /*! border-radius: 0.5em; */
+        }
+        .toc ul {
+            list-style-type: none;
+            padding-left: 1em;
+            margin-top: 0;
+        }
+        .toc a:hover {
+            color: rgb(26, 46, 109);
+        }
+        .pages a, pre {
+            display: block;
+            background-color: light-dark(white, var(--dark-background-color));;
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding-left: 1em;
+            padding-right: 1em;
+        }
+        pre {
+            padding: 1em;
+            text-wrap: stable;
+            border: 0.1em solid light-dark(rgb(57, 57, 57), var(--dark-border-color));
+        }
+        nav {
+            background-color: light-dark(white, var(--dark-background-color));;
+            padding: 0.5em;
+            /*! padding-left: 2.5em; */
+            border-bottom: 0.5px solid light-dark(rgb(57, 57, 57), var(--dark-border-color));
+        }
+        .logo-head {
+            display: flex;align-content: center;align-items: center;margin-left: 0.5em;
+        }
+        nav h1 {
+            font-size: 2em;
+            padding: 0;
+            margin: 0;
+        }
+        ul a {
+            color: black;
+            text-decoration: none;
+        }
+        article a {
+            color: #aaaaff;
+            text-decoration: none;
+        }
+        ul a:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        .focused {
+            border-left: 3px solid #aaaaff;
+            padding-left: 0.5em;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        code {
+            background-color: #f1f1f1;
+        }
+        body {
+            height: 100vh;
+        }
+        aside, main {
+            height: calc(100vh - 4em);
+            overflow-y: auto;
+        }
+        body {
+            scrollbar-width: none;
+        }
+        h1 {
+            margin-top: 0;
+        }
+        main {
+            display: grid;
+            gap: 1em;
+            grid-template-columns: 8fr 2fr;
+        }
+        main aside {
+            position: sticky;
+            /*! top: 1em; */
+            padding-top: 1em;
+        }
+        main aside h2 {
+            font-size: 1.25em;
+        }
+        main aside h3 {
+            font-size: 1em;
+            text-transform: none;
+            font-weight: normal;
+        }
+        nav {
+            display: grid;
+            list-style-type: none;
+            /*! padding: 1em; */
+            /*! padding-left: 2.5em; */
+            /*! padding-right: 2em; */
+            /*! margin: 0; */
+            grid-template-columns: 1fr 4fr;
+        }
+        nav ul {
+            display: flex;
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        nav ul li {
+            margin-right: 1em;
+        }
+        article li {
+            margin-bottom: 1em;
+        }
+        .toc {
+            border-left: 0.5px solid light-dark(rgb(57, 57, 57), var(--dark-border-color));
+            padding-left: 1em;
+        }
+        h1 {
+            font-size: 1.5em;
+        }
+        .subtitle {
+            font-size: 1em;
+        }
+        .pre-inner {
+            padding: 1em;
+        }
+        .code-head {
+            background-color: #f1f1f1;
+            padding: 0.5em;
+            padding-left: 1em;
+            border-bottom: 0.5px solid light-dark(rgb(57, 57, 57), var(--dark-border-color));
+        }
+        th {
+            text-align: left;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            border-spacing: 1em;
+            background: light-dark(white, var(--dark-background-color));;
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        td, th {
+            padding: 0.5em;
+        }
+        tr:first-child {
+            margin-right: 1em;
+        }
+        tr {
+            border-bottom: 0.5px solid light-dark(rgb(57, 57, 57), var(--dark-border-color));
+        }
+        input {
+            padding: 0.5em;
+            border: 0.5px solid light-dark(rgb(57, 57, 57), var(--dark-border-color));
+            width: 100%;
+            box-sizing: border-box;
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-title {
+            padding-left: 1.5em;
+        }
+        article {
+            padding-left: 2em;
+            padding-right: 2em;
+        }
+        .manual {
+            display: block;margin: 0;padding: 0;
+        }
+        nav a {
+            text-decoration: none;
+        }
+        .right-sidebar a {
+            text-decoration: none;
+            color: #aaaaff;
+        }
+        .right-sidebar svg {
+            display: inline;
+            height: 1em;
+            color: #aaaaff;
+        }
+        .menu {
+            background-color: light-dark(white, var(--dark-background-color));;
+            border-bottom: 0.5px solid light-dark(rgb(57, 57, 57), var(--dark-border-color));
+        }
+        .menu {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+        .jcb:hover {
+            background-color: #aaaaff;
+            a {
+                color: light-dark(white, var(--dark-background-color));;
             }
-            aside a {
-                color: black;
-                text-decoration: none;
-            }
-            aside li:hover {
-                text-decoration: underline;
-            }
-            #content {
-                padding-left: 1rem;
-                padding-right: 1rem;
-                max-width: 45em;
-            }
-            img {
-                max-width: 100%;
-            }
-            pre {
-                border: 1px solid #ccc;
-                max-width: 100%;
+        }
+        .aurora:hover {
+            background-color: #aaaaff;
+        }
+        .menu ul {
+            display: flex;
+            justify-content: flex-end;
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        .menu li {
+            padding-top: 0.25em;
+        }
+        .menu ul li {
+            padding-left: 1em;
+            padding-right: 1em;
+        }
+        .link-with-logo {
+            display: flex;
+            align-items: center;
+            margin-left: 1em;
+        }
+        .link-with-logo svg {
+            margin-right: 0.25em;
+        }
+        .nav-title svg {
+            display: none;
+        }
+        .toc a, .links a {
+            color: light-dark(rgb(81, 81, 81), var(--dark-foreground-color));
+        }
+        @media (max-width: 800px) {
+            #main {
+                grid-template-columns: 1fr;
             }
             aside {
-                padding: 1rem;
-                border-right: 1px solid #ccc;
+                display: none;
             }
-            aside h2 {
-                font-size: 1.1rem;
+            main {
+                grid-template-columns: 1fr;
             }
-            #logo {
-                max-height: 50px;
-            }
-            video {
+            article {
                 max-width: 100%;
-            }
-            a {
-                color: royalblue;
-            }
-            button {
-                background-color: #aaaaff;
-                color: black;
-                padding: 0.6rem;
-                border: none;
-                border-radius: 0.25rem;
-                cursor: pointer;
-                width: 100%;
-                font-size: 1.1rem;
-            }
-            a[rel="next"]::after {
-                content: " →";
-            }
-            p code,
-            li code {
-                background-color: #696969;
-                padding: 0.1rem;
-                color: white;
-                border-radius: 0.25rem;
-            }
-            article li {
-                margin-bottom: 0.5rem;
-            }
-            .callout {
-                background-color: #f0f0ff;
                 padding: 1em;
             }
-            #user-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-                gap: 1rem;
-                list-style-type: none;
+            .nav-title svg {
+                display: block;
+                margin-left: auto;
+                padding-right: 0.5em;
+                max-height: 1.5em;
+            }
+            aside li svg {
+                display: inline-block;
+                width: 1em;
+                height: 1em;
+                margin-right: 0.5em;
+                align-self: center;
+            }
+            nav {
+                flex-direction: column;
+                align-items: center;
+            }
+            nav ul {
+                display: block;
+            }
+            nav ul li {
+                margin-right: 0;
+                margin-bottom: 0.5em;
+            }
+            .logo-head {
+                display: block;
+            }
+            h1 {
+                font-size: 1.25em;
+                margin-left: 0;
+            }
+            .manual {
+                margin-left: 1em;
+            }
+            article {
+                padding-left: 1em;
+            }
+            nav {
+                display: block;
                 padding: 0;
+                background-color: light-dark(white, var(--dark-background-color));;
             }
-            #template-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-                gap: 1rem;
-                list-style-type: none;
-                padding: 0;
+            #title {
+                font-size: 1em;
             }
-            #user-grid li,
-            #template-grid li {
-                border: 1px solid #ccc;
-                padding: 1rem;
+            .nav-title {
+                padding-left: 0;
             }
-            
-            footer {
-                padding: 1rem;
-                margin-top: 1rem;
-                font-size: 0.8rem;
-                color: #aaa;
+            nav img {
+                display: none;
             }
-            @media (max-width: 800px) {
-                main {
-                    grid-template-columns: 1fr;
-                }
-                aside {
-                    border-right: none;
-                }
-                article {
-                    padding: 1rem;
-                }
-                #content {
-                    padding-left: 0;
-                    padding-right: 0;
-                    max-width: 100%;
-                }
-                pre {
-                    max-width: 20em;
-                }
-                aside {
-                    order: 2;
-                }
+            .nav-title {
+                background-color: light-dark(white, var(--dark-background-color));;
+                box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);
+                padding: 0.5em;
+                padding-left: 1em;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
             }
-            nav div {
+            .nav-title:hover {
+                background-color: #f7f7f7;
+                cursor: pointer;
+            }
+            html {
+                border-top-width: 5px;
+            }
+            .logo-head {
+                background-color: rgb(238, 237, 237);
+                color: light-dark(white, var(--dark-background-color));;
+                display: flex;
+                align-items: center;
+                padding: 0.5em;
+                padding-left: 1em;
+                margin: 0;
+            }
+            .logo-head div {
                 display: flex;
                 align-items: center;
             }
-            nav div p {
-                margin-left: 1rem;
+            table {
+                overflow-x: auto;
+                overflow-y: scroll;
             }
-            .github-button-style {
-                margin: 0;
-                margin-top: 10px;
-                margin-right: 20px;
+            .menu {
+                display: none;
             }
-            .callout-note {
-                background-color: #f0f0ff;
-                padding: 1em;
-                border-left: 5px solid #aaaaff;
+        }
+        .toc h3 {
+            margin-bottom: 0.25em;
+        }
+        footer {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            margin-top: 2em;
+            background-color: light-dark(white, var(--dark-background-color));;
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding-left: 1em;
+            padding-right: 1em;
+            gap: 1em;
+        }
+        footer div:first-child {
+            border-right: 0.5px solid light-dark(rgb(57, 57, 57), var(--dark-border-color));
+        }
+        footer div:last-child {
+            display: flex;
+            justify-content: flex-end;
+        }
+        video {
+            max-width: 35em;
+        }
+        .pages ul {
+            padding-bottom: 3em;
+        }
+        .links {
+            margin-top: 3em;
+            border-left: 0.5px solid light-dark(rgb(57, 57, 57), var(--dark-border-color));
+        }
+        form {
+            display: flex;
+            align-items: center;
+            padding-left: 0;
+            padding-right: 0;
+        }
+        form svg {
+            margin-left: 0.5em;
+            height: 1.5em;
+        }
+        form button {
+            display: flex;
+            align-items: center;
+            background-color: inherit;
+            border: none;
+            outline: none;
+            cursor: pointer;
+        }
+        .search h2 {
+            margin-top: 0.5em;
+        }
+    </style>
+</head>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelector(".nav-title").addEventListener("click", function() {
+            if (!document.querySelector(".pages").style.display || document.querySelector(".pages").style.display === "none") {
+                document.querySelector(".pages").style.display = "block";
+            } else {
+                document.querySelector(".pages").style.display = "none";
             }
-            .callout-tip {
-                background-color: #f0f0ff;
-                padding: 1em;
-                border-left: 5px solid #aaaaff;
-            }
-        </style>
-        <script async defer src="https://buttons.github.io/buttons.js"></script>
-    </head>
-    <body>
-        <nav>
-            <div>
-                <img
-                    id="logo"
-                    src="{{ site.root_url }}/assets/aurora-logo.png"
-                />
-                <p style="font-weight: bold">
-                    Aurora
-                </p>
-            </div>
-            <p class="github-button-style">
-                <a class="github-button" href="https://github.com/capjamesg/aurora" data-color-scheme="no-preference: light; light: light; dark: dark;" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star capjamesg/aurora on GitHub">Star</a>            </p>
-        </nav>
+        });
+        // scroll sidebar to focused link, with 1em padding
+        var focused = document.querySelector(".focused");
+        if (focused) {
+            focused.scrollIntoView({block: "center", inline: "nearest"});
+        }
+    });
+</script>
+<body>
+    <div class="menu"><div></div><ul><a href="https://jamesg.blog/" class="jcb"><li>James' Coffee Blog</li></a><a href="https://aurora.jamesg.blog/" class="aurora"><li>Aurora</li></a><a href="https://jamesg.blog/jamesql/"><li style="background-color: #aaaaff; color: light-dark(white, var(--dark-background-color));;">JameSQL</li></a></ul></div>
+    <nav><div class="logo-head"><img src="https://jamesg.blog/assets/mascot.svg" style="height: 2.5em;/*! margin-top: 1em; */margin-right: 1em;/*! float: right; */"><div style="/*! display: flex; *//*! padding-top: 1em; */padding-bottom: 0;/*! border-bottom: 1px solid black; */"><h1 style="/*! display: inline-block; */font-size: 1em;margin: 0;">JameSQL</h1>
+    <p class="manual">User Manual</p></div></div><a href="#"><div class="nav-title"><h1 id="title">{{ page.title }}</h1> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><circle cx="128" cy="128" r="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="88" y1="128" x2="168" y2="128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="136 96 168 128 136 160" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg></div></a><span></span></nav>
+    <div id="main">
+        <aside class="pages">
+            <ul>
+                <search>
+                    <form action="/search-pages/" method="get">
+                        <input type="text" id="search-input" name="q" placeholder="Search">
+                        <button type="submit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><circle cx="112" cy="112" r="80" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="168.57" y1="168.57" x2="224" y2="224" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg></button>
+                    </form>
+                </search>
+                <a href="/"
+                    ><li {% if page.permalink.strip() == "{{ site.root_url.strip() }}" %}class='current'{% endif %}>What is Aurora?</li></a
+                >
+                <a href="/start/"><li {% if page.permalink == "/start/" %}class='current'{% endif %}>Start a Website</li></a>
+                <a href="/blog/"><li {% if page.permalink == "/blog/" %}class='current'{% endif %}>Use Aurora as a Blog</li></a>
+                <a href="/structure/"><li {% if page.permalink == "/structure/" %}class='current'{% endif %}>Site Structure</li></a>
+                <a href="/configuration/"><li{% if page.permalink == "/configuration/" %}class='current'{% endif %}>Configuration</li></a>
+                <a href="/build-methods/"><li{% if page.permalink == "/build-methods/" %}class='current'{% endif %}>Build Methods</li></a>
+                <a href="/templating/"><li {% if page.permalink == "/templating/" %}class='current'{% endif %}>Templating with Jinja2</li></a>
+                <a href="/archives/"><li {% if page.permalink == "/archives/" %}class='current'{% endif %}>Date, Category, and Tag Archives</li></a>
+                <h3>Build Sites with Data</h3>
+                <a href="/collections/"><li {% if page.permalink == "/collections/" %}class='current'{% endif %}>Collections</li></a>
+                <a href="/pagination/"><li {% if page.permalink == "/pagination/" %}class='current'{% endif %}>Pagination</li></a>
+                <h3>Advanced Features</h3>
+                <a href="/state/"><li {% if page.permalink == "/state/" %}class='current'{% endif %}>State</li></a>
+                <a href="/hooks/"><li {% if page.permalink == "/hooks/" %}class='current'{% endif %}>Hooks</li></a>
+                <a href="/dates/"><li {% if page.permalink == "/dates/" %}class='current'{% endif %}>Date Handling</li></a>
+                <a href="/permalinks/"><li {% if page.permalink == "/permalinks/" %}class='current'{% endif %}>Permalinks</li></a>
+                <a href="/sitemap/"><li {% if page.permalink == "/sitemap/" %}class='current'{% endif %}>Sitemap</li></a>
+                <a href="/robots/"><li {% if page.permalink == "/robots/" %}class='current'{% endif %}>robots.txt</li></a>
+                <h3>Demos</h3>
+                <a href="/users/"><li {% if page.permalink == "/users/" %}class='current'{% endif %}>Sites Built with Aurora</li></a>
+                <a href="/templates/"><li {% if page.permalink == "/templates/" %}class='current'{% endif %}>Aurora Templates</li></a>
+                <a href="/performance/"><li {% if page.permalink == "/performance/" %}class='current'{% endif %}>Performance</li></a>
+                <a href="/design/"><li {% if page.permalink == "/design/" %}class='current'{% endif %}>Aurora Design</li></a>
+            </ul>
+        </aside>
         <main>
-            <aside>
-                {{ page }}
-                <ul>
-                    <h2>Aurora</h2>
-                    <a href="/"
-                        ><li {% if page.permalink.strip() == "{{ site.root_url.strip() }}" %}class='current'{% endif %}>What is Aurora?</li></a
-                    >
-                    <a href="/start/"><li {% if page.permalink == "/start/" %}class='current'{% endif %}>Start a Website</li></a>
-                    <a href="/blog/"><li {% if page.permalink == "/blog/" %}class='current'{% endif %}>Use Aurora as a Blog</li></a>
-                    <a href="/structure/"><li {% if page.permalink == "/structure/" %}class='current'{% endif %}>Site Structure</li></a>
-                    <a href="/configuration/"><li{% if page.permalink == "/configuration/" %}class='current'{% endif %}>Configuration</li></a>
-                    <a href="/build-methods/"><li{% if page.permalink == "/build-methods/" %}class='current'{% endif %}>Build Methods</li></a>
-                    <a href="/templating/"><li {% if page.permalink == "/templating/" %}class='current'{% endif %}>Templating with Jinja2</li></a>
-                    <a href="/archives/"><li {% if page.permalink == "/archives/" %}class='current'{% endif %}>Date, Category, and Tag Archives</li></a>
-                    <h2>Build Sites with Data</h2>
-                    <a href="/collections/"><li {% if page.permalink == "/collections/" %}class='current'{% endif %}>Collections</li></a>
-                    <a href="/pagination/"><li {% if page.permalink == "/pagination/" %}class='current'{% endif %}>Pagination</li></a>
-                    <h2>Advanced Features</h2>
-                    <a href="/state/"><li {% if page.permalink == "/state/" %}class='current'{% endif %}>State</li></a>
-                    <a href="/hooks/"><li {% if page.permalink == "/hooks/" %}class='current'{% endif %}>Hooks</li></a>
-                    <a href="/dates/"><li {% if page.permalink == "/dates/" %}class='current'{% endif %}>Date Handling</li></a>
-                    <a href="/permalinks/"><li {% if page.permalink == "/permalinks/" %}class='current'{% endif %}>Permalinks</li></a>
-                    <a href="/sitemap/"><li {% if page.permalink == "/sitemap/" %}class='current'{% endif %}>Sitemap</li></a>
-                    <a href="/robots/"><li {% if page.permalink == "/robots/" %}class='current'{% endif %}>robots.txt</li></a>
-                    <h2>Demos</h2>
-                    <a href="/users/"><li {% if page.permalink == "/users/" %}class='current'{% endif %}>Sites Built with Aurora</li></a>
-                    <a href="/templates/"><li {% if page.permalink == "/templates/" %}class='current'{% endif %}>Aurora Templates</li></a>
-                    <a href="/performance/"><li {% if page.permalink == "/performance/" %}class='current'{% endif %}>Performance</li></a>
-                    <a href="/design/"><li {% if page.permalink == "/design/" %}class='current'{% endif %}>Aurora Design</li></a>
-                </ul>
-            </aside>
             <article>
-                <div id="content" class="h-entry">{{ content }}</div>
-                <footer>Edit this page on <a href="https://github.com/capjamesg/aurora/tree/main/docs/{{ page.generated_from }}">GitHub</a></footer>
+                {{ content }}
             </article>
+            {% if not site.page.notoc %}
+                <aside class="right-sidebar">
+                    {% if site.page.toc %}
+                    <div class="toc">
+                        <h2>Contents</h2>
+                        {% for item in site.page.toc %}
+                            <h3><a href="#{{ item.id }}">{{ item.text }}</a></h3>
+                            {% if item.children %}
+                                <ul>
+                                    {% for child in item.children %}
+                                        <li><a href="#{{ child.id }}">{{ child.text }}</a></li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <p class="links"><a href="https://github.com/capjamesg/aurora/tree/main/docs/{{ page.generated_from }}" class="link-with-logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><path d="M92.69,216H48a8,8,0,0,1-8-8V163.31a8,8,0,0,1,2.34-5.65L165.66,34.34a8,8,0,0,1,11.31,0L221.66,79a8,8,0,0,1,0,11.31L98.34,213.66A8,8,0,0,1,92.69,216Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="136" y1="64" x2="192" y2="120" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="164" y1="92" x2="68" y2="188" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="95.49" y1="215.49" x2="40.51" y2="160.51" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>Edit this Page</a></p>
+                </aside>
+            {% endif %}
         </main>
-    </body>
+    </div>
+</body>
 </html>
