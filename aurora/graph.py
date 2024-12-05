@@ -298,9 +298,12 @@ def get_file_dependencies_and_evaluated_contents(
                 len(state[parsed_content["layout"] + "s"]) - 1
             )
         else:
-            state[parsed_content["layout"] + "s"][
-                layout_permalinks_to_idx[parsed_content["permalink"]]
-            ] = parsed_content
+            if len(state[parsed_content["layout"] + "s"]) > layout_permalinks_to_idx[
+                parsed_content["permalink"]
+            ]:
+                state[parsed_content["layout"] + "s"][
+                    layout_permalinks_to_idx[parsed_content["permalink"]]
+                ] = parsed_content
 
     if "collection" in parsed_content:
         collection_normalized = parsed_content["collection"].lower()
