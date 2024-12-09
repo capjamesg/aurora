@@ -1076,7 +1076,13 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
     else:
         load_data_from_data_files(deps, data_file_integrity)
 
+    print(deps, incremental)
+
     for page, contents in all_opened_pages.items():
+        # if incremental, only recompute dependencies for changed files
+        if deps and page not in deps and not incremental:
+            continue
+
         dependencies, parsed_page = get_file_dependencies_and_evaluated_contents(
             page, contents
         )
@@ -1123,7 +1129,7 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
     all_dependencies = {
         k: v for k, v in all_dependencies.items() if not k.startswith("pages/_")
     }
-
+    
     dependencies = (
         deps
         if incremental and len(deps) > 0
@@ -1140,7 +1146,7 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         iterator = dependencies
     else:
         iterator = tqdm.tqdm(dependencies)
-
+    # print(dependencies)
     print("Generating pages in memory...")
 
     for file in iterator:
@@ -1219,6 +1225,6 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         print("View your site at \033[92mhttp://localhost:8000\033[0m")
         print("Press Ctrl+C to stop.")
 
-        srv.watch(ROOT_DIR, lambda: main(deps=[srv.watcher.filepath]))
+        srv.watch(ROOT_DIR, lambda: main(deps=[srv.watcher.filepath], incremental=True))
         srv.watch("./assets", lambda: copy_asset_to_site([srv.watcher.filepath]))
         srv.serve(root=SITE_DIR, liveport=35729, port=8000, debug=False)
