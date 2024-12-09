@@ -365,6 +365,9 @@
         .toc a, .links a {
             color: light-dark(rgb(81, 81, 81), var(--dark-foreground-color));
         }
+        video {
+            max-width: 100%;
+        }
         @media (max-width: 800px) {
             #main {
                 grid-template-columns: 1fr;
@@ -445,9 +448,6 @@
             }
             html {
                 border-top-width: 5px;
-            }
-            video {
-                max-width: 100%;
             }
             .logo-head {
                 background-color: light-dark(rgb(238, 237, 237), #333345);
