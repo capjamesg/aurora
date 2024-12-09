@@ -4,7 +4,6 @@ layout: default
 permalink: /hooks/
 ---
 
-<h2 id="build-hooks-advanced-">Hooks (Advanced)</h2>
 <p>
     You can define custom functions that are run before a file is processed by
     Aurora. You can use this feature to save metadata about a page that can then
@@ -38,14 +37,14 @@ permalink: /hooks/
 
 <p>The type signature of this hook is:</p>
 
-<pre><code class="lang-python">
+<pre><code class="language-python">
 def hook_name(text: str) -&gt; str:
     return text.upper()
 </code></pre>
 
 <p>You can register this hook in the <code>template_filter</code> hook:</p>
 
-<pre><code class="lang-python">
+<pre><code class="language-python">
 HOOKS = {
     "template_filter": {
         "example": ["hook_name"]
@@ -55,7 +54,7 @@ HOOKS = {
 
 <p>This hook can then be used in any template on your website:</p>
 
-<pre><code class="lang-html">
+<pre><code class="language-html">
 &lt;h1&gt; "hello world" | hook_name &lt;/h1&gt;
 </code></pre>
 
@@ -67,14 +66,14 @@ HOOKS = {
 
 <p>The type signature of this hook is:</p>
 
-<pre><code class="lang-python">
+<pre><code class="language-python">
 def hook_name(file_name: str, page_state: dict, site_state: dict) -&gt; dict:
     return page_state
 </code></pre>
 
 <p>You can register this hook in the <code>template_filter</code> hook:</p>
 
-<pre><code class="lang-python">
+<pre><code class="language-python">
 HOOKS = {
     "pre_generation": {
         "example": ["hook_name"]
@@ -90,14 +89,14 @@ HOOKS = {
 
 <p>The type signature of this hook is:</p>
 
-<pre><code class="lang-python">
+<pre><code class="language-python">
 def hook_name(site_state: str) -&gt; None:
     pass
 </code></pre>
 
 <p>You can register this hook in the <code>template_filter</code> hook:</p>
 
-<pre><code class="lang-python">
+<pre><code class="language-python">
 HOOKS = {
     "post_build": {
         "example": ["hook_name"]

@@ -38,7 +38,7 @@
           --primary-color: #aaaaff;
           --border-radius: var(--medium-space);
           --dark-background-color: #242424;
-          --dark-code-color: #06006e;
+          --dark-code-color: #333345;
           --dark-foreground-color: #d7d7d7;
           --light-focus-color: rgb(255, 225, 116);
           --dark-focus-color: #1e3cb1;
@@ -197,8 +197,8 @@
             text-decoration: none;
             font-weight: bold;
         }
-        code {
-            background-color: #f1f1f1;
+        p code {
+            background-color: light-dark(#f1f1f1, var(--dark-code-color));
         }
         body {
             height: 100vh;
@@ -440,14 +440,17 @@
                 justify-content: space-between;
             }
             .nav-title:hover {
-                background-color: #f7f7f7;
+                background-color: light-dark(#f7f7f7, #333345);
                 cursor: pointer;
             }
             html {
                 border-top-width: 5px;
             }
+            video {
+                max-width: 100%;
+            }
             .logo-head {
-                background-color: rgb(238, 237, 237);
+                background-color: light-dark(rgb(238, 237, 237), #333345);
                 color: light-dark(white, var(--dark-background-color));;
                 display: flex;
                 align-items: center;
@@ -487,9 +490,6 @@
             display: flex;
             justify-content: flex-end;
         }
-        video {
-            max-width: 35em;
-        }
         .pages ul {
             padding-bottom: 3em;
         }
@@ -518,7 +518,36 @@
         .search h2 {
             margin-top: 0.5em;
         }
+        .pages a:has(.current) {
+            border-left: 3px solid #aaaaff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        img {
+            max-width: 100%;
+        }
+        #template-grid, #user-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(15em, 1fr));
+            gap: 1em;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        #template-grid img, #user-grid img {
+            height: 100%;
+            object-fit: cover;
+            object-position: 0 0;
+        }
     </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var focused = document.querySelector(".focused");
+            if (focused) {
+                focused.scrollIntoView({block: "center", inline: "nearest"});
+            }
+        });
+    </script>
 </head>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
@@ -538,25 +567,20 @@
 </script>
 <body>
     <div class="menu"><div></div><ul><a href="https://jamesg.blog/" class="jcb"><li>James' Coffee Blog</li></a><a href="https://aurora.jamesg.blog/" class="aurora"><li style="background-color: #aaaaff; color: light-dark(white, var(--dark-background-color));">Aurora</li></a><a href="https://jamesg.blog/jamesql/"><li>JameSQL</li></a></ul></div>
-    <nav><div class="logo-head"><img src="https://jamesg.blog/assets/mascot.svg" style="height: 2.5em;/*! margin-top: 1em; */margin-right: 1em;/*! float: right; */"><div style="/*! display: flex; *//*! padding-top: 1em; */padding-bottom: 0;/*! border-bottom: 1px solid black; */"><h1 style="/*! display: inline-block; */font-size: 1em;margin: 0;">JameSQL</h1>
+    <nav><div class="logo-head"><img src="https://jamesg.blog/assets/mascot.svg" style="height: 2.5em;/*! margin-top: 1em; */margin-right: 1em;/*! float: right; */"><div style="/*! display: flex; *//*! padding-top: 1em; */padding-bottom: 0;/*! border-bottom: 1px solid black; */"><h1 style="/*! display: inline-block; */font-size: 1em;margin: 0;">Aurora</h1>
     <p class="manual">User Manual</p></div></div><a href="#"><div class="nav-title"><h1 id="title">{{ page.title }}</h1> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><circle cx="128" cy="128" r="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="88" y1="128" x2="168" y2="128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="136 96 168 128 136 160" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg></div></a><span></span></nav>
     <div id="main">
         <aside class="pages">
             <ul>
-                <search>
-                    <form action="/search-pages/" method="get">
-                        <input type="text" id="search-input" name="q" placeholder="Search">
-                        <button type="submit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><circle cx="112" cy="112" r="80" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="168.57" y1="168.57" x2="224" y2="224" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg></button>
-                    </form>
-                </search>
+                <h3>Get Started</h3>
                 <a href="{{ site.root_url }}"
                     ><li {% if page.permalink.strip() == "{{ site.root_url.strip() }}" %}class='current'{% endif %}>What is Aurora?</li></a
                 >
                 <a href="{{ site.root_url }}start/"><li {% if page.permalink == "/start/" %}class='current'{% endif %}>Start a Website</li></a>
                 <a href="{{ site.root_url }}blog/"><li {% if page.permalink == "/blog/" %}class='current'{% endif %}>Use Aurora as a Blog</li></a>
                 <a href="{{ site.root_url }}structure/"><li {% if page.permalink == "/structure/" %}class='current'{% endif %}>Site Structure</li></a>
-                <a href="{{ site.root_url }}configuration/"><li{% if page.permalink == "/configuration/" %}class='current'{% endif %}>Configuration</li></a>
-                <a href="{{ site.root_url }}build-methods/"><li{% if page.permalink == "/build-methods/" %}class='current'{% endif %}>Build Methods</li></a>
+                <a href="{{ site.root_url }}configuration/"><li {% if page.permalink == "/configuration/" %}class='current'{% endif %}>Configuration</li></a>
+                <a href="{{ site.root_url }}build-methods/"><li {% if page.permalink == "/build-methods/" %}class='current'{% endif %}>Build Methods</li></a>
                 <a href="{{ site.root_url }}templating/"><li {% if page.permalink == "/templating/" %}class='current'{% endif %}>Templating with Jinja2</li></a>
                 <a href="{{ site.root_url }}archives/"><li {% if page.permalink == "/archives/" %}class='current'{% endif %}>Date, Category, and Tag Archives</li></a>
                 <h3>Build Sites with Data</h3>

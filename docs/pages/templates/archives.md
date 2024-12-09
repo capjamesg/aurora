@@ -1,10 +1,8 @@
 ---
-title: Date, Category, and Tat Archives
+title: Date, Category, and Tag Archives
 layout: default
 permalink: /archives/
 ---
-
-# Date, Category, and Tag Archives
 
 Aurora has support built-in for generating date, category, and tag archives. These are useful for blogs.
 

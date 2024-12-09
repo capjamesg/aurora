@@ -4,8 +4,6 @@ permalink: /build-methods/
 layout: default
 ---
 
-# Build Methods
-
 There are three ways you can build your Aurora site:
 
 1. Full build

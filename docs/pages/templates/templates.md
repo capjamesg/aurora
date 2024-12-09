@@ -4,8 +4,6 @@ permalink: /templates/
 layout: default
 ---
 
-# Aurora Templates
-
 Below are templates you can use to get started with Aurora.
 
 <ul id="template-grid">

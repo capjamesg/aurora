@@ -4,8 +4,6 @@ layout: default
 permalink: /templating/
 ---
 
-# Templating with Jinja2
-
 Aurora supports using [jinja2](https://jinja.palletsprojects.com/en/3.1.x/) to create template logic.
 
 jinja2 is a popular Python templating engine with support for variable interpolation, conditionals, loops, and more.

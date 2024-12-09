@@ -4,8 +4,6 @@ permalink: /collections/
 layout: default
 ---
 
-# Data Collections
-
 Data collections are groups of data on a website.
 
 You can use collections to create lists of content items (i.e. all of the bookmarks on your website).
@@ -24,7 +22,7 @@ You can create a data collection by:
     <code>.json</code> extension.
 </p>
 <p>Within the file, create a list that contains JSON objects, like this:</p>
-<pre><code class="lang-python">[
+<pre><code class="language-python">[
     {
         "slug": "rosslyn-coffee",
         "layout": "coffee",
@@ -55,7 +53,7 @@ You can create a data collection by:
     <code>.csv</code> extension.
 </p>
 <p>Here is an example CSV file:</p>
-<pre><code class="lang-python">slug,layout,title
+<pre><code class="language-python">slug,layout,title
 rosslyn-coffee,coffee,Rosslyn Coffee in London is terrific.
 </code></pre>
 <p class="callout">
@@ -84,13 +82,13 @@ If you want to group multiple existing files together, you can specify a `collec
 
 To do so, use the following syntax:
 
-<pre><code class="lang-python">---
+<pre><code class="language-python">---
 title: My Page
 collections: coffee
 ---</code></pre>
 
 You can then access the collection like so:
 
-<pre><code class="lang-python">{% raw %}{% for item in coffee %}{% endraw %}
+<pre><code class="language-python">{% raw %}{% for item in coffee %}{% endraw %}
     {{ item.title }}
 {% raw %}{% endfor %}{% endraw %}</code></pre>

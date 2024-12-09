@@ -1,7 +1,7 @@
 import os
 
 BASE_URLS = {
-    "local": "http://localhost:8000",
+    "local": "http://localhost:8000/",
     "production": "https://jamesg.blog/aurora/",
 }
 
@@ -10,5 +10,8 @@ BASE_URL = BASE_URLS[SITE_ENV]
 ROOT_DIR = "pages"
 LAYOUTS_BASE_DIR = "_layouts"
 SITE_DIR = "_site"
-HOOKS = {}
+HOOKS = {
+    "post_template_generation": {"highlighting": ["highlight_code"]},
+    "pre_template_generation": {"highlighting": ["generate_table_of_contents"]}
+}
 SITE_STATE = {}
