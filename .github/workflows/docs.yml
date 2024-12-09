@@ -24,6 +24,7 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip
           pip install -e .
+          pip install pygments bs4
           cd docs
       - name: Build main site
         env:  
