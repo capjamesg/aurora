@@ -17,15 +17,27 @@ import orjson
 import pyromark
 import tqdm
 from frontmatter import loads
-from jinja2 import (Environment, FileSystemBytecodeCache, FileSystemLoader,
-                    Template, meta, nodes)
+from jinja2 import (
+    Environment,
+    FileSystemBytecodeCache,
+    FileSystemLoader,
+    Template,
+    meta,
+    nodes,
+)
 from jinja2.visitor import NodeVisitor
 from toposort import toposort_flatten
 from yaml.reader import ReaderError
 from collections import defaultdict
 
-from .date_helpers import (archive_date, date_to_xml_string, list_archive_date,
-                           long_date, month_number_to_written_month, year)
+from .date_helpers import (
+    archive_date,
+    date_to_xml_string,
+    list_archive_date,
+    long_date,
+    month_number_to_written_month,
+    year,
+)
 
 module_dir = os.getcwd()
 os.chdir(module_dir)
@@ -37,8 +49,15 @@ normalized_collection_permalinks = {}
 # print all logs
 logging.basicConfig(level=logging.INFO)
 
-from config import (BASE_URL, HOOKS, LAYOUTS_BASE_DIR, ROOT_DIR, SITE_DIR,
-                    SITE_STATE, SITE_ENV)
+from config import (
+    BASE_URL,
+    HOOKS,
+    LAYOUTS_BASE_DIR,
+    ROOT_DIR,
+    SITE_DIR,
+    SITE_STATE,
+    SITE_ENV,
+)
 
 ALLOWED_EXTENSIONS = ["html", "md", "css", "js", "txt", "xml"]
 
@@ -101,7 +120,7 @@ state = {
     "build_date": today.strftime("%m-%d"),
     "pages": [],
     "build_timestamp": datetime.datetime.now().isoformat(),
-    "environment": SITE_ENV
+    "environment": SITE_ENV,
 }
 
 file_extensions = {}
@@ -301,9 +320,10 @@ def get_file_dependencies_and_evaluated_contents(
                 len(state[parsed_content["layout"] + "s"]) - 1
             )
         else:
-            if len(state[parsed_content["layout"] + "s"]) > layout_permalinks_to_idx[
-                parsed_content["permalink"]
-            ]:
+            if (
+                len(state[parsed_content["layout"] + "s"])
+                > layout_permalinks_to_idx[parsed_content["permalink"]]
+            ):
                 state[parsed_content["layout"] + "s"][
                     layout_permalinks_to_idx[parsed_content["permalink"]]
                 ] = parsed_content
@@ -361,7 +381,7 @@ def recursively_build_page_template_with_front_matter(
     front_matter: dict,
     state: dict,
     current_contents: str = "",
-    level: int = 0
+    level: int = 0,
 ) -> str:
     """
     Recursively build a page template with front matter.
@@ -380,7 +400,7 @@ def recursively_build_page_template_with_front_matter(
         layout_path = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/{layout}.html"
 
         front_matter.metadata = interpolate_front_matter(front_matter.metadata, state)
-    
+
         page_fm = type("Page", (object,), front_matter.metadata)()
 
         current_contents = loads(
@@ -404,7 +424,7 @@ def recursively_build_page_template_with_front_matter(
     return current_contents
 
 
-def render_page(file: str, skip_hooks = False) -> None:
+def render_page(file: str, skip_hooks=False) -> None:
     """
     Render a page with the Aurora static site generator.
     """
@@ -424,7 +444,7 @@ def render_page(file: str, skip_hooks = False) -> None:
 
     if all_parsed_pages[file].get("skip"):
         return
-    
+
     slug = file.split("/")[-1].replace(".html", "")
 
     slug = slug.replace("posts/", "")
@@ -462,13 +482,9 @@ def render_page(file: str, skip_hooks = False) -> None:
     if page_state.get("date"):
         date = page_state["date"]
         slug = re.sub(r"\d{4}-\d{2}-\d{2}-", "", file)
-        slug = (
-            slug.replace("pages/posts/", "").replace(".md", "").replace(".html", "")
-        )
+        slug = slug.replace("pages/posts/", "").replace(".md", "").replace(".html", "")
         page_state["page"]["slug"] = slug
-        page_state["page"][
-            "url"
-        ] = f"{BASE_URL}/{date.strftime('%Y/%m/%d')}/{slug}/"
+        page_state["page"]["url"] = f"{BASE_URL}/{date.strftime('%Y/%m/%d')}/{slug}/"
     else:
         page_state["page"]["url"] = f"{BASE_URL}/{slug}/"
 
@@ -505,7 +521,7 @@ def render_page(file: str, skip_hooks = False) -> None:
     except Exception as e:
         # print(f"Error rendering {file}")
         return
-    
+
     page_state["page"].template = file
 
     rendered = recursively_build_page_template_with_front_matter(
@@ -560,8 +576,12 @@ def render_page(file: str, skip_hooks = False) -> None:
                 "url": final_url,
                 "file": file,
                 "rendered_html": contents,
-                "noindex": True if hasattr(page_state.get("page"), "noindex") else False,
-                "private": True if hasattr(page_state.get("page"), "private") else False,
+                "noindex": True
+                if hasattr(page_state.get("page"), "noindex")
+                else False,
+                "private": True
+                if hasattr(page_state.get("page"), "private")
+                else False,
                 "title": (
                     page_state["page"].title
                     if page_state.get("page") and hasattr(page_state["page"], "title")
@@ -570,9 +590,9 @@ def render_page(file: str, skip_hooks = False) -> None:
             }
         )
         saved_pages.add(final_url)
-    
+
     permalinks[permalink].append(file)
-    
+
     permalink = os.path.join(SITE_DIR, permalink)
 
     if permalink.endswith(".html"):
@@ -622,7 +642,7 @@ def generate_date_page_given_year_month_date(
         posts=date_archive_state["posts"],
         page=date_archive_state,
     )
-    
+
     if not date_archive_state.get("page"):
         date_archive_state["page"] = {}
 
@@ -945,7 +965,7 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
         collections_to_files[data_dir] = []
         idx = 0
         print(f"Loading data from {data_file}...")
-        
+
         for record in tqdm.tqdm(all_data_files[data_file]):
             if not record.get("slug"):
                 # print(
@@ -974,7 +994,9 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
             try:
                 contents = "---\n" + record_as_string + "\n---\n"
                 loaded_contents = loads(contents)
-                loaded_contents["skip"] = data_dir in SITE_STATE.get("disable_collection_single_page_generation", {})
+                loaded_contents["skip"] = data_dir in SITE_STATE.get(
+                    "disable_collection_single_page_generation", {}
+                )
                 all_opened_pages[path] = contents
                 all_page_contents[path] = loaded_contents
                 all_parsed_pages[path] = loaded_contents
@@ -990,6 +1012,7 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
                 continue
 
     return changed_files
+
 
 def main(deps: list = [], watch: bool = False, incremental: bool = False) -> None:
     """
@@ -1052,46 +1075,78 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                 all_opened_pages[page] = JINJA2_ENV.from_string(contents)
 
             all_page_contents[page] = loads(contents)
+
+            # if in posts/, assign permalink
+            if page.startswith("pages/posts/"):
+                # permalink should be YYYY-MM-DD-slug.md turned into /YYYY/MM/DD/slug/
+                yyyy_mm_dd = re.search(r"\d{4}-\d{2}-\d{2}", page)
+                if yyyy_mm_dd:
+                    yyyy_mm_dd = yyyy_mm_dd.group(0)
+                    slug = page.split(yyyy_mm_dd)[1].replace(".md", "")[1:]
+                    yyyy_mm_dd_slug = f"{yyyy_mm_dd.replace('-', '/')}/{slug}"
+
+                all_page_contents[page].metadata[
+                    "permalink"
+                ] = f"/{yyyy_mm_dd_slug.strip('/')}/"
+                print(
+                    f"Setting permalink for {page} as {all_page_contents[page].metadata['permalink']}"
+                )
         except Exception as e:
             # logging.debug(f"Error reading {page}", level=logging.CRITICAL)
             # pass
             raise e
-        
+
     # sort all_opened_pages alpha
     all_opened_pages_sorted = list(sorted(all_page_contents.items()))
     # reverse so that we can get next and previous
     all_opened_pages_sorted.reverse()
-        
+
     for i, page in enumerate(all_opened_pages_sorted):
         # add next and previous page
         if i < len(all_opened_pages_sorted) - 1:
-            all_page_contents[page[0]].metadata["previous"] = {"url": all_opened_pages_sorted[i + 1][1].metadata.get("permalink", ""), "title": all_opened_pages_sorted[i + 1][1].metadata.get("title", "")}
+            all_page_contents[page[0]].metadata["previous"] = {
+                "url": all_opened_pages_sorted[i + 1][1].metadata.get("permalink", ""),
+                "title": all_opened_pages_sorted[i + 1][1].metadata.get("title", ""),
+            }
 
             previous_in_same_category = None
             # look at all posts before i
             for j in range(i + 1, len(all_opened_pages_sorted)):
                 # print(f"Comparing {all_opened_pages_sorted[j][1].metadata.get('categories', [])} with {page[1].metadata.get('categories', [])}")
-                if all_opened_pages_sorted[j][1].metadata.get("categories", []) == page[1].metadata.get("categories"):
-                    # print(f"Found previous in same category: {all_opened_pages_sorted[j][1].metadata.get('title')}")
+                if all_opened_pages_sorted[j][1].metadata.get("categories", []) == page[
+                    1
+                ].metadata.get("categories"):
+                    print(f"Found previous in same category: {all_opened_pages_sorted[j][1].metadata.get('permalink')}")
                     previous_in_same_category = all_opened_pages_sorted[j][1]
                     break
 
             if previous_in_same_category:
-                print(f"Setting previous in same category for {page[1].metadata.get('title')} as {previous_in_same_category.metadata.get('title')} where next is {next_in_same_category.metadata.get('title') if next_in_same_category else None}")
-                all_page_contents[page[0]].metadata["previous_in_same_category"] = {"url": previous_in_same_category.metadata.get("permalink", ""), "title": previous_in_same_category.metadata.get("title", "")}
+                # print(f"Setting previous in same category for {page[1].metadata.get('title')} as {previous_in_same_category.metadata.get('title')} where next is {next_in_same_category.metadata.get('title') if next_in_same_category else None}")
+                all_page_contents[page[0]].metadata["previous_in_same_category"] = {
+                    "url": previous_in_same_category.metadata.get("permalink", ""),
+                    "title": previous_in_same_category.metadata.get("title", ""),
+                }
 
         if i > 0:
-            all_page_contents[page[0]].metadata["next"] = {"url": all_opened_pages_sorted[i - 1][1].metadata.get("permalink", ""), "title": all_opened_pages_sorted[i - 1][1].metadata.get("title", "")}
+            all_page_contents[page[0]].metadata["next"] = {
+                "url": all_opened_pages_sorted[i - 1][1].metadata.get("permalink", ""),
+                "title": all_opened_pages_sorted[i - 1][1].metadata.get("title", ""),
+            }
 
             next_in_same_category = None
 
             for j in range(i - 1, -1, -1):
-                if all_opened_pages_sorted[j][1].metadata.get("categories", []) == page[1].metadata.get("categories"):
+                if all_opened_pages_sorted[j][1].metadata.get("categories", []) == page[
+                    1
+                ].metadata.get("categories"):
                     next_in_same_category = all_opened_pages_sorted[j][1]
                     break
 
             if next_in_same_category:
-                all_page_contents[page[0]].metadata["next_in_same_category"] = {"url": next_in_same_category.metadata.get("permalink", ""), "title": next_in_same_category.metadata.get("title", "")}
+                all_page_contents[page[0]].metadata["next_in_same_category"] = {
+                    "url": next_in_same_category.metadata.get("permalink", ""),
+                    "title": next_in_same_category.metadata.get("title", ""),
+                }
 
     if deps:
         deps = set(deps)
@@ -1173,7 +1228,7 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
     all_dependencies = {
         k: v for k, v in all_dependencies.items() if not k.startswith("pages/_")
     }
-    
+
     dependencies = (
         deps
         if incremental and len(deps) > 0
@@ -1236,7 +1291,7 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                 SITE_STATE.get("category_template", "category"),
                 "categories",
                 SITE_STATE.get("category_slug_root", "category"),
-        )
+            )
         if "skip_tag_page_generation" not in SITE_STATE:
             process_archives(
                 SITE_STATE.get("tag_template", "tag"),
@@ -1279,13 +1334,17 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         srv.watch(ROOT_DIR, lambda: main(deps=[srv.watcher.filepath], incremental=True))
         srv.watch("./assets", lambda: copy_asset_to_site([srv.watcher.filepath]))
         srv.serve(root=SITE_DIR, liveport=35729, port=8000, debug=False)
-        
+
         for permalink, files in permalinks.items():
             if len(files) > 1:
                 yellow = "\033[93m"
-                print(f"{yellow}Warning: {permalink} has multiple files: {files}{yellow}")
+                print(
+                    f"{yellow}Warning: {permalink} has multiple files: {files}{yellow}"
+                )
     else:
         for permalink, files in permalinks.items():
             if len(files) > 1:
                 yellow = "\033[93m"
-                print(f"{yellow}Warning: {permalink} has multiple files: {files}{yellow}")
+                print(
+                    f"{yellow}Warning: {permalink} has multiple files: {files}{yellow}"
+                )
