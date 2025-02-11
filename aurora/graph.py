@@ -554,6 +554,7 @@ def render_page(file: str) -> None:
             "file": file,
             "rendered_html": contents,
             "noindex": True if hasattr(page_state.get("page"), "noindex") else False,
+            "private": True if hasattr(page_state.get("page"), "private") else False,
             "title": (
                 page_state["page"].title
                 if page_state.get("page") and hasattr(page_state["page"], "title")
