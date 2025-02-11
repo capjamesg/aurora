@@ -22,6 +22,7 @@ from jinja2 import (Environment, FileSystemBytecodeCache, FileSystemLoader,
 from jinja2.visitor import NodeVisitor
 from toposort import toposort_flatten
 from yaml.reader import ReaderError
+from collections import defaultdict
 
 from .date_helpers import (archive_date, date_to_xml_string, list_archive_date,
                            long_date, month_number_to_written_month, year)
@@ -42,6 +43,7 @@ from config import (BASE_URL, HOOKS, LAYOUTS_BASE_DIR, ROOT_DIR, SITE_DIR,
 ALLOWED_EXTENSIONS = ["html", "md", "css", "js", "txt", "xml"]
 
 saved_pages = set()
+permalinks = defaultdict(list)
 all_data_files = {}
 all_pages = []
 all_opened_pages = {}
@@ -402,7 +404,7 @@ def recursively_build_page_template_with_front_matter(
     return current_contents
 
 
-def render_page(file: str) -> None:
+def render_page(file: str, skip_hooks = False) -> None:
     """
     Render a page with the Aurora static site generator.
     """
@@ -412,7 +414,7 @@ def render_page(file: str) -> None:
     try:
         contents = all_opened_pages[file]
     except Exception as e:
-        # print(f"Error reading {file}")
+        print(f"Error reading {file}")
         # raise e
         return
 
@@ -509,9 +511,10 @@ def render_page(file: str) -> None:
         file, all_parsed_pages[file], page_state, contents
     )
 
-    for hook, hooks in EVALUATED_POST_TEMPLATE_GENERATION_HOOKS.items():
-        for hook in hooks:
-            rendered = hook(file, page_state, state, rendered)
+    if not skip_hooks:
+        for hook, hooks in EVALUATED_POST_TEMPLATE_GENERATION_HOOKS.items():
+            for hook in hooks:
+                rendered = hook(file, page_state, state, rendered)
 
     file = file.replace(ROOT_DIR + "/", "")
 
@@ -566,7 +569,9 @@ def render_page(file: str) -> None:
             }
         )
         saved_pages.add(final_url)
-
+    
+    permalinks[permalink].append(file)
+    
     permalink = os.path.join(SITE_DIR, permalink)
 
     if permalink.endswith(".html"):
@@ -1159,16 +1164,20 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         iterator = dependencies
     else:
         iterator = tqdm.tqdm(dependencies)
-    # print(dependencies)
+
+    iterator_set = set(iterator)
+
     print("Generating pages in memory...")
 
     for file in iterator:
         if os.path.isdir(file):
             for root, _, files in os.walk(file):
                 for file in files:
-                    render_page(os.path.join(root, file))
+                    file_path = os.path.join(root, file)
+                    if file_path not in iterator_set:
+                        render_page(file_path, skip_hooks=watch)
         else:
-            render_page(file)
+            render_page(file, skip_hooks=watch)
 
     print("Saving files to disk...")
 
@@ -1244,3 +1253,13 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         srv.watch(ROOT_DIR, lambda: main(deps=[srv.watcher.filepath], incremental=True))
         srv.watch("./assets", lambda: copy_asset_to_site([srv.watcher.filepath]))
         srv.serve(root=SITE_DIR, liveport=35729, port=8000, debug=False)
+        
+        for permalink, files in permalinks.items():
+            if len(files) > 1:
+                yellow = "\033[93m"
+                print(f"{yellow}Warning: {permalink} has multiple files: {files}{yellow}")
+    else:
+        for permalink, files in permalinks.items():
+            if len(files) > 1:
+                yellow = "\033[93m"
+                print(f"{yellow}Warning: {permalink} has multiple files: {files}{yellow}")
