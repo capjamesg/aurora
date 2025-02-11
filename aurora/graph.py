@@ -17,6 +17,7 @@ import orjson
 import pyromark
 import tqdm
 from frontmatter import loads
+from bs4 import BeautifulSoup
 from jinja2 import (
     Environment,
     FileSystemBytecodeCache,
@@ -116,6 +117,7 @@ for file_name, hooks in HOOKS.get("post_build", {}).items():
 today = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 state = {
     "posts": [],
+    "backlinks": defaultdict(list),
     "root_url": BASE_URL,
     "build_date": today.strftime("%m-%d"),
     "pages": [],
@@ -1076,6 +1078,8 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
 
             all_page_contents[page] = loads(contents)
 
+            page_links = BeautifulSoup(pyromark.html(contents), "html.parser").find_all("a", href=True)
+
             # if in posts/, assign permalink
             if page.startswith("pages/posts/"):
                 # permalink should be YYYY-MM-DD-slug.md turned into /YYYY/MM/DD/slug/
@@ -1088,13 +1092,18 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                 all_page_contents[page].metadata[
                     "permalink"
                 ] = f"/{yyyy_mm_dd_slug.strip('/')}/"
-                print(
-                    f"Setting permalink for {page} as {all_page_contents[page].metadata['permalink']}"
-                )
+                
+            all_page_contents[page].metadata["outgoing_links"] = page_links
         except Exception as e:
             # logging.debug(f"Error reading {page}", level=logging.CRITICAL)
             # pass
             raise e
+        
+    for page in all_opened_pages:
+        for link in all_page_contents[page].metadata.get("outgoing_links", []):
+            print(f"Adding backlink from {page} to {link['href']}")
+
+            state["backlinks"][link["href"]].append({"url": all_page_contents[page].metadata.get("permalink"), "title": all_page_contents[page].metadata.get("title", "")})
 
     # sort all_opened_pages alpha
     all_opened_pages_sorted = list(sorted(all_page_contents.items()))
@@ -1116,7 +1125,6 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                 if all_opened_pages_sorted[j][1].metadata.get("categories", []) == page[
                     1
                 ].metadata.get("categories"):
-                    print(f"Found previous in same category: {all_opened_pages_sorted[j][1].metadata.get('permalink')}")
                     previous_in_same_category = all_opened_pages_sorted[j][1]
                     break
 
