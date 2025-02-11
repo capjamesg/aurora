@@ -1103,8 +1103,6 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
 
     for page in all_opened_pages:
         for link in all_page_contents[page].metadata.get("outgoing_links", []):
-            print(f"Adding backlink from {page} to {link['href']}")
-
             state["backlinks"][link["href"]].append(
                 {
                     "url": all_page_contents[page].metadata.get("permalink"),
