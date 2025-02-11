@@ -432,6 +432,7 @@ def render_page(file: str, skip_hooks = False) -> None:
     has_user_assigned_permalink = all_parsed_pages[file].metadata.get(
         "has_user_assigned_permalink"
     )
+
     page_state["page"] = all_parsed_pages[file].metadata
     page_state["post"] = all_parsed_pages[file].metadata
 
@@ -990,17 +991,6 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
 
     return changed_files
 
-from cProfile import Profile
-
-
-def profile_main(deps: list = [], watch: bool = False, incremental: bool = False) -> None:
-    profiler = Profile()
-    profiler.runcall(main, deps, watch, incremental)
-    profiler.print_stats()
-    # save snakeviz to out.out
-    profiler.dump_stats("out.out")
-
-
 def main(deps: list = [], watch: bool = False, incremental: bool = False) -> None:
     """
     The Aurora runtime.
@@ -1066,6 +1056,42 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
             # logging.debug(f"Error reading {page}", level=logging.CRITICAL)
             # pass
             raise e
+        
+    # sort all_opened_pages alpha
+    all_opened_pages_sorted = list(sorted(all_page_contents.items()))
+    # reverse so that we can get next and previous
+    all_opened_pages_sorted.reverse()
+        
+    for i, page in enumerate(all_opened_pages_sorted):
+        # add next and previous page
+        if i < len(all_opened_pages_sorted) - 1:
+            all_page_contents[page[0]].metadata["previous"] = {"url": all_opened_pages_sorted[i + 1][1].metadata.get("permalink", ""), "title": all_opened_pages_sorted[i + 1][1].metadata.get("title", "")}
+
+            previous_in_same_category = None
+            # look at all posts before i
+            for j in range(i + 1, len(all_opened_pages_sorted)):
+                # print(f"Comparing {all_opened_pages_sorted[j][1].metadata.get('categories', [])} with {page[1].metadata.get('categories', [])}")
+                if all_opened_pages_sorted[j][1].metadata.get("categories", []) == page[1].metadata.get("categories"):
+                    # print(f"Found previous in same category: {all_opened_pages_sorted[j][1].metadata.get('title')}")
+                    previous_in_same_category = all_opened_pages_sorted[j][1]
+                    break
+
+            if previous_in_same_category:
+                print(f"Setting previous in same category for {page[1].metadata.get('title')} as {previous_in_same_category.metadata.get('title')} where next is {next_in_same_category.metadata.get('title') if next_in_same_category else None}")
+                all_page_contents[page[0]].metadata["previous_in_same_category"] = {"url": previous_in_same_category.metadata.get("permalink", ""), "title": previous_in_same_category.metadata.get("title", "")}
+
+        if i > 0:
+            all_page_contents[page[0]].metadata["next"] = {"url": all_opened_pages_sorted[i - 1][1].metadata.get("permalink", ""), "title": all_opened_pages_sorted[i - 1][1].metadata.get("title", "")}
+
+            next_in_same_category = None
+
+            for j in range(i - 1, -1, -1):
+                if all_opened_pages_sorted[j][1].metadata.get("categories", []) == page[1].metadata.get("categories"):
+                    next_in_same_category = all_opened_pages_sorted[j][1]
+                    break
+
+            if next_in_same_category:
+                all_page_contents[page[0]].metadata["next_in_same_category"] = {"url": next_in_same_category.metadata.get("permalink", ""), "title": next_in_same_category.metadata.get("title", "")}
 
     if deps:
         deps = set(deps)
