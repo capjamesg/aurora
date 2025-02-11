@@ -41,6 +41,7 @@ from config import (BASE_URL, HOOKS, LAYOUTS_BASE_DIR, ROOT_DIR, SITE_DIR,
 
 ALLOWED_EXTENSIONS = ["html", "md", "css", "js", "txt", "xml"]
 
+saved_pages = set()
 all_data_files = {}
 all_pages = []
 all_opened_pages = {}
@@ -547,21 +548,24 @@ def render_page(file: str) -> None:
         permalink = file.replace("templates/", "")
 
     permalink_without_index = permalink.split("index.html")[0]
+    final_url = f"{BASE_URL}/{permalink_without_index.rstrip('/')}/"
 
-    state["pages"].append(
-        {
-            "url": f"{BASE_URL}/{permalink_without_index.rstrip('/')}/",
-            "file": file,
-            "rendered_html": contents,
-            "noindex": True if hasattr(page_state.get("page"), "noindex") else False,
-            "private": True if hasattr(page_state.get("page"), "private") else False,
-            "title": (
-                page_state["page"].title
-                if page_state.get("page") and hasattr(page_state["page"], "title")
-                else ""
-            ),
-        }
-    )
+    if final_url not in saved_pages:
+        state["pages"].append(
+            {
+                "url": final_url,
+                "file": file,
+                "rendered_html": contents,
+                "noindex": True if hasattr(page_state.get("page"), "noindex") else False,
+                "private": True if hasattr(page_state.get("page"), "private") else False,
+                "title": (
+                    page_state["page"].title
+                    if page_state.get("page") and hasattr(page_state["page"], "title")
+                    else ""
+                ),
+            }
+        )
+        saved_pages.add(final_url)
 
     permalink = os.path.join(SITE_DIR, permalink)
 
@@ -981,6 +985,16 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
 
     return changed_files
 
+from cProfile import Profile
+
+
+def profile_main(deps: list = [], watch: bool = False, incremental: bool = False) -> None:
+    profiler = Profile()
+    profiler.runcall(main, deps, watch, incremental)
+    profiler.print_stats()
+    # save snakeviz to out.out
+    profiler.dump_stats("out.out")
+
 
 def main(deps: list = [], watch: bool = False, incremental: bool = False) -> None:
     """
@@ -1076,8 +1090,6 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
             load_data_from_data_files(deps, data_file_integrity)
     else:
         load_data_from_data_files(deps, data_file_integrity)
-
-    print(deps, incremental)
 
     for page, contents in all_opened_pages.items():
         # if incremental, only recompute dependencies for changed files
@@ -1182,17 +1194,20 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                 f.write(state_to_write[file].encode())
 
     if any(k.startswith("pages/") for k in all_dependencies):
-        process_date_archives()
-        process_archives(
-            SITE_STATE.get("category_template", "category"),
-            "categories",
-            SITE_STATE.get("category_slug_root", "category"),
+        if "skip_date_archive_page_generation" not in SITE_STATE:
+            process_date_archives()
+        if "skip_category_page_generation" not in SITE_STATE:
+            process_archives(
+                SITE_STATE.get("category_template", "category"),
+                "categories",
+                SITE_STATE.get("category_slug_root", "category"),
         )
-        process_archives(
-            SITE_STATE.get("tag_template", "tag"),
-            "tags",
-            SITE_STATE.get("tag_slug_root", "tag"),
-        )
+        if "skip_tag_page_generation" not in SITE_STATE:
+            process_archives(
+                SITE_STATE.get("tag_template", "tag"),
+                "tags",
+                SITE_STATE.get("tag_slug_root", "tag"),
+            )
 
     for collection_name, attributes in SITE_STATE.get("paginators", {}).items():
         generate_paginated_page_for_collection(

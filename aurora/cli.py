@@ -67,8 +67,8 @@ def build(incremental):
     from .graph import main as build_site
 
     # import cProfile
-    # cProfile.runctx("build_site()", globals(), locals(), filename="profile.prof")
-    # print("Building site...")
+    # cProfile.run("build_site(incremental=incremental)", sort="cumulative")
+    print("Building site...")
     build_site(incremental=incremental)
     print("Done! ✨")
 
