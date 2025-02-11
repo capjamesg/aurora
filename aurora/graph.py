@@ -1078,7 +1078,9 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
 
             all_page_contents[page] = loads(contents)
 
-            page_links = BeautifulSoup(pyromark.html(contents), "html.parser").find_all("a", href=True)
+            page_links = BeautifulSoup(pyromark.html(contents), "html.parser").find_all(
+                "a", href=True
+            )
 
             # if in posts/, assign permalink
             if page.startswith("pages/posts/"):
@@ -1092,18 +1094,23 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                 all_page_contents[page].metadata[
                     "permalink"
                 ] = f"/{yyyy_mm_dd_slug.strip('/')}/"
-                
+
             all_page_contents[page].metadata["outgoing_links"] = page_links
         except Exception as e:
             # logging.debug(f"Error reading {page}", level=logging.CRITICAL)
             # pass
             raise e
-        
+
     for page in all_opened_pages:
         for link in all_page_contents[page].metadata.get("outgoing_links", []):
             print(f"Adding backlink from {page} to {link['href']}")
 
-            state["backlinks"][link["href"]].append({"url": all_page_contents[page].metadata.get("permalink"), "title": all_page_contents[page].metadata.get("title", "")})
+            state["backlinks"][link["href"]].append(
+                {
+                    "url": all_page_contents[page].metadata.get("permalink"),
+                    "title": all_page_contents[page].metadata.get("title", ""),
+                }
+            )
 
     # sort all_opened_pages alpha
     all_opened_pages_sorted = list(sorted(all_page_contents.items()))
