@@ -1078,37 +1078,39 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
 
             all_page_contents[page] = loads(contents)
 
-            page_links = BeautifulSoup(pyromark.html(contents), "html.parser").find_all(
-                "a", href=True
-            )
+            if SITE_STATE.get("enable_backlinks"):
+                page_links = BeautifulSoup(
+                    pyromark.html(contents), "html.parser"
+                ).find_all("a", href=True)
 
-            # if in posts/, assign permalink
-            if page.startswith("pages/posts/"):
-                # permalink should be YYYY-MM-DD-slug.md turned into /YYYY/MM/DD/slug/
-                yyyy_mm_dd = re.search(r"\d{4}-\d{2}-\d{2}", page)
-                if yyyy_mm_dd:
-                    yyyy_mm_dd = yyyy_mm_dd.group(0)
-                    slug = page.split(yyyy_mm_dd)[1].replace(".md", "")[1:]
-                    yyyy_mm_dd_slug = f"{yyyy_mm_dd.replace('-', '/')}/{slug}"
+                # if in posts/, assign permalink
+                if page.startswith("pages/posts/"):
+                    # permalink should be YYYY-MM-DD-slug.md turned into /YYYY/MM/DD/slug/
+                    yyyy_mm_dd = re.search(r"\d{4}-\d{2}-\d{2}", page)
+                    if yyyy_mm_dd:
+                        yyyy_mm_dd = yyyy_mm_dd.group(0)
+                        slug = page.split(yyyy_mm_dd)[1].replace(".md", "")[1:]
+                        yyyy_mm_dd_slug = f"{yyyy_mm_dd.replace('-', '/')}/{slug}"
 
-                all_page_contents[page].metadata[
-                    "permalink"
-                ] = f"/{yyyy_mm_dd_slug.strip('/')}/"
+                    all_page_contents[page].metadata[
+                        "permalink"
+                    ] = f"/{yyyy_mm_dd_slug.strip('/')}/"
 
-            all_page_contents[page].metadata["outgoing_links"] = page_links
+                all_page_contents[page].metadata["outgoing_links"] = page_links
         except Exception as e:
             # logging.debug(f"Error reading {page}", level=logging.CRITICAL)
             # pass
             raise e
 
-    for page in all_opened_pages:
-        for link in all_page_contents[page].metadata.get("outgoing_links", []):
-            state["backlinks"][link["href"]].append(
-                {
-                    "url": all_page_contents[page].metadata.get("permalink"),
-                    "title": all_page_contents[page].metadata.get("title", ""),
-                }
-            )
+    if SITE_STATE.get("enable_backlinks"):
+        for page in all_opened_pages:
+            for link in all_page_contents[page].metadata.get("outgoing_links", []):
+                state["backlinks"][link["href"]].append(
+                    {
+                        "url": all_page_contents[page].metadata.get("permalink"),
+                        "title": all_page_contents[page].metadata.get("title", ""),
+                    }
+                )
 
     # sort all_opened_pages alpha
     all_opened_pages_sorted = list(sorted(all_page_contents.items()))
@@ -1338,6 +1340,13 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
 
         srv = Server()
 
+        for permalink, files in permalinks.items():
+            if len(files) > 1:
+                yellow = "\033[93m"
+                print(
+                    f"{yellow}Warning: {permalink} has multiple files: {files}{yellow}"
+                )
+
         # logging.disable(logging.INFO)
 
         print("Live reload mode enabled.\nWatching for changes...\n")
@@ -1347,13 +1356,6 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
         srv.watch(ROOT_DIR, lambda: main(deps=[srv.watcher.filepath], incremental=True))
         srv.watch("./assets", lambda: copy_asset_to_site([srv.watcher.filepath]))
         srv.serve(root=SITE_DIR, liveport=35729, port=8000, debug=False)
-
-        for permalink, files in permalinks.items():
-            if len(files) > 1:
-                yellow = "\033[93m"
-                print(
-                    f"{yellow}Warning: {permalink} has multiple files: {files}{yellow}"
-                )
     else:
         for permalink, files in permalinks.items():
             if len(files) > 1:

@@ -12,6 +12,6 @@ LAYOUTS_BASE_DIR = "_layouts"
 SITE_DIR = "_site"
 HOOKS = {
     "post_template_generation": {"highlighting": ["highlight_code"]},
-    "pre_template_generation": {"highlighting": ["generate_table_of_contents"]}
+    "pre_template_generation": {"highlighting": ["generate_table_of_contents"]},
 }
 SITE_STATE = {}

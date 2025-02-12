@@ -32,7 +32,7 @@ setuptools.setup(
         "orjson",
         "tqdm",
         "python-dateutil",
-        "chardet"
+        "chardet",
     ],
     include_package_data=True,
     package_data={"": ["templates/index.html"]},
