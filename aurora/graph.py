@@ -530,7 +530,7 @@ def render_page(file: str, skip_hooks=False) -> None:
         file, all_parsed_pages[file], page_state, contents
     )
 
-    if not skip_hooks:
+    if skip_hooks:
         for hook, hooks in EVALUATED_POST_TEMPLATE_GENERATION_HOOKS.items():
             for hook in hooks:
                 rendered = hook(file, page_state, state, rendered)
