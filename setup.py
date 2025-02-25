@@ -24,7 +24,7 @@ setuptools.setup(
         "jinja2",
         "livereload",
         "toposort",
-        "pyromark~=0.6.0",
+        "pyromark>=0.6,<0.10",
         "python-frontmatter",
         "requests",
         "progress",
