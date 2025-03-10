@@ -589,6 +589,11 @@ def render_page(file: str, skip_hooks=False) -> None:
                     if page_state.get("page") and hasattr(page_state["page"], "title")
                     else ""
                 ),
+                "collections": (
+                    page_state["page"].collections
+                    if page_state.get("collections") and hasattr(page_state["page"], "collections")
+                    else ""
+                ),
             }
         )
         saved_pages.add(final_url)
