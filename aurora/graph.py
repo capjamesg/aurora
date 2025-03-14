@@ -594,6 +594,7 @@ def render_page(file: str, skip_hooks=False) -> None:
                     if page_state.get("collections") and hasattr(page_state["page"], "collections")
                     else ""
                 ),
+                "modified": os.path.getctime(original_file) if os.path.exists(original_file) else 0,
             }
         )
         saved_pages.add(final_url)
