@@ -358,21 +358,23 @@ def make_any_nonexistent_directories(path: str) -> None:
         os.makedirs(path)
 
 
-def interpolate_front_matter(front_matter: dict, state: dict) -> dict:
+def interpolate_front_matter(front_matter: dict, state: dict, runtime = None) -> dict:
     """Evaluate front matter with Jinja2 to allow logic in front matter."""
     for key in front_matter.keys():
         if (
             isinstance(front_matter[key], str)
             and "{" in front_matter[key]
             and key != "contents"
+            and (not front_matter.get("defer_title_evaluation") or runtime == "category")
         ):
             item = front_matter[key]
             try:
                 item = JINJA2_ENV.from_string(item).render(
-                    page=front_matter.get("page", front_matter), site=state
+                    page=front_matter, site=state
                 )
                 front_matter[key] = item
             except:
+                print(f"Error evaluating {item}. ERROR.")
                 continue
 
     return front_matter
@@ -872,7 +874,9 @@ def process_archives(name: str, state_key_associated_with_name: str, path: str):
 
         print(f"Generating archive for {category}")
 
-        fm = interpolate_front_matter(page, archive_state)
+        page["category"] = category
+
+        fm = interpolate_front_matter(page, archive_state, "category")
 
         fm["url"] = f"{BASE_URL}/{path}/{slugify(category)}/"
 
