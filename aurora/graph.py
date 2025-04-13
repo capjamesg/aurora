@@ -283,6 +283,13 @@ def get_file_dependencies_and_evaluated_contents(
             parsed_content["post"]["date"] = datetime.datetime.strptime(
                 date_slug, "%Y-%m-%d"
             )
+            # if "hms" in psot metadata, add to post date
+            if parsed_content.get("hms") and parsed_content["hms"].count(":") == 2:
+                parsed_content["post"]["date"] = parsed_content["post"]["date"].replace(
+                    hour=int(parsed_content["hms"].split(":")[0]),
+                    minute=int(parsed_content["hms"].split(":")[1]),
+                    second=int(parsed_content["hms"].split(":")[2]),
+                )
 
             parsed_content["post"]["date_without_year"] = parsed_content["post"][
                 "date"
@@ -472,6 +479,12 @@ def render_page(file: str, skip_hooks=False) -> None:
             page_state["post"]["date"] = datetime.datetime.strptime(
                 date_slug, "%Y-%m-%d"
             )
+            if page_state["post"].get("hms") and page_state["post"]["hms"].count(":") == 2:
+                page_state["post"]["date"] = page_state["post"]["date"].replace(
+                    hour=int(page_state["post"]["hms"].split(":")[0]),
+                    minute=int(page_state["post"]["hms"].split(":")[1]),
+                    second=int(page_state["post"]["hms"].split(":")[2]),
+                )
             page_state["post"]["full_date"] = page_state["post"]["date"].strftime(
                 "%B %d, %Y"
             )
@@ -1246,7 +1259,12 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
 
     state["posts"] = sorted(
         state["posts"],
-        key=lambda x: x["slug"],
+        # if post has "hms", sort by slug date then hms; otherwise, sort by slug
+        key=lambda x: (
+            "-".join(x.metadata["slug"].split("-")[:3]) + "-" + x.metadata.get("hms", "")
+            if x.metadata.get("hms")
+            else x["slug"]
+        ),
         reverse=True,
     )
 
