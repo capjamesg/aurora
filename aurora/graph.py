@@ -377,7 +377,7 @@ def interpolate_front_matter(front_matter: dict, state: dict, runtime = None) ->
             item = front_matter[key]
             try:
                 item = JINJA2_ENV.from_string(item).render(
-                    page=front_matter, site=state
+                    page=front_matter.get("page", front_matter), site=state
                 )
                 front_matter[key] = item
             except:
@@ -441,6 +441,10 @@ def render_page(file: str, skip_hooks=False) -> None:
     """
 
     original_file = file
+
+    # # skip if json
+    if file.endswith(".json"):
+        return
 
     try:
         contents = all_opened_pages[file]
@@ -588,6 +592,7 @@ def render_page(file: str, skip_hooks=False) -> None:
     final_url = f"{BASE_URL}/{permalink_without_index.rstrip('/')}/"
 
     if final_url not in saved_pages:
+        # if has collections
         state["pages"].append(
             {
                 "url": final_url,
@@ -606,7 +611,7 @@ def render_page(file: str, skip_hooks=False) -> None:
                 ),
                 "collections": (
                     page_state["page"].collections
-                    if page_state.get("collections") and hasattr(page_state["page"], "collections")
+                    if hasattr(page_state["page"], "collections")
                     else ""
                 ),
                 "modified": os.path.getctime(original_file) if os.path.exists(original_file) else 0,
@@ -1003,7 +1008,7 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
                 record["layout"] = data_dir
 
             slug = record.get("slug")
-            path = os.path.join(ROOT_DIR, data_dir, slug, "index.html")
+            path = os.path.join(data_dir, "index.html")
 
             record_as_string = orjson.dumps(record).decode()
 
@@ -1039,6 +1044,18 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
     return changed_files
 
 
+def get_data_files_in_folder(folder: str) -> list:
+    folder = os.path.abspath(folder)  # Convert to absolute path once
+    files = []
+    for entry in os.listdir(folder):
+        path = os.path.join(folder, entry)
+        if os.path.isdir(path):
+            files.extend(get_data_files_in_folder(path))
+        elif os.path.isfile(path) and path.endswith('.json'):
+            files.append(path)
+    return files
+
+
 def main(deps: list = [], watch: bool = False, incremental: bool = False) -> None:
     """
     The Aurora runtime.
@@ -1057,11 +1074,18 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
     start = datetime.datetime.now()
 
     if os.path.exists(DATA_FILES_DIR):
-        for file in os.listdir(DATA_FILES_DIR):
+        for file in get_data_files_in_folder(DATA_FILES_DIR):
+            # remove base /Users/james/src/airport-pianos/pages/
+            file = file.replace(os.path.abspath(DATA_FILES_DIR) + "/", "")
+            # if dir, recurse
             file_contents = read_file(os.path.join(DATA_FILES_DIR, file))
 
             if os.path.splitext(file)[-1].replace(".", "") == "json":
                 all_data_files[file] = orjson.loads(file_contents)
+                if isinstance(all_data_files[file], dict):
+                    all_data_files[file] = [
+                        {k: v for k, v in all_data_files[file].items()}
+                    ]
                 state[file.replace(".json", "")] = all_data_files[file]
             elif os.path.splitext(file)[-1].replace(".", "") == "csv":
                 all_data_files[file] = list(csv.DictReader(file_contents.split("\n")))
@@ -1070,6 +1094,7 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                 logging.debug(
                     f"Unsupported data file format: {file}", level=logging.CRITICAL
                 )
+                print(f"Unsupported data file format: {file}")
 
     if not os.path.exists(SITE_DIR):
         os.makedirs(SITE_DIR)
