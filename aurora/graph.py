@@ -367,21 +367,24 @@ def make_any_nonexistent_directories(path: str) -> None:
 
 def interpolate_front_matter(front_matter: dict, state: dict, runtime = None) -> dict:
     """Evaluate front matter with Jinja2 to allow logic in front matter."""
+    # Keep track of already interpolated keys to prevent double interpolation
+    interpolated_keys = set()
+    
     for key in front_matter.keys():
         if (
             isinstance(front_matter[key], str)
             and "{" in front_matter[key]
             and key != "contents"
             and (not front_matter.get("defer_title_evaluation") or runtime == "category")
+            and key not in interpolated_keys  # Only interpolate if key hasn't been processed
         ):
-            item = front_matter[key]
             try:
-                item = JINJA2_ENV.from_string(item).render(
+                front_matter[key] = JINJA2_ENV.from_string(front_matter[key]).render(
                     page=front_matter.get("page", front_matter), site=state
                 )
-                front_matter[key] = item
+                interpolated_keys.add(key)  # Mark this key as interpolated
             except:
-                print(f"Error evaluating {item}. ERROR.")
+                print(f"Error evaluating {front_matter[key]}. ERROR.")
                 continue
 
     return front_matter
@@ -393,13 +396,13 @@ def recursively_build_page_template_with_front_matter(
     state: dict,
     current_contents: str = "",
     level: int = 0,
+    original_page: dict = None,
 ) -> str:
     """
     Recursively build a page template with front matter.
 
     This function is called recursively until there is no layout key in the front matter.
     """
-
     if level > 10:
         logging.critical(
             f"{file_name} has more than ten levels of recursion. Template will be marked as empty."
@@ -410,26 +413,32 @@ def recursively_build_page_template_with_front_matter(
         layout = front_matter.metadata["layout"]
         layout_path = f"{ROOT_DIR}/{LAYOUTS_BASE_DIR}/{layout}.html"
 
-        front_matter.metadata = interpolate_front_matter(front_matter.metadata, state)
+        # Always use a deep copy of the current front matter for this recursion
+        current_page_metadata = deepcopy(front_matter.metadata)
 
-        page_fm = type("Page", (object,), front_matter.metadata)()
+        # Interpolate front matter before creating page object
+        current_page_metadata = interpolate_front_matter(current_page_metadata, state)
+
+        # Create page object with interpolated front matter
+        page_fm = type("Page", (object,), current_page_metadata)()
 
         current_contents = loads(
             all_opened_pages[layout_path].render(
                 page=page_fm,
                 site=state,
                 content=current_contents,
-                post=Post(front_matter.metadata),
+                post=Post(current_page_metadata),
             )
         ).content
 
         layout_front_matter = all_parsed_pages[layout_path]
 
-        layout_front_matter["page"] = front_matter.metadata
-        layout_front_matter["post"] = front_matter.metadata
+        # Pass the current page metadata for the next recursion
+        layout_front_matter["page"] = current_page_metadata
+        layout_front_matter["post"] = current_page_metadata
 
         return recursively_build_page_template_with_front_matter(
-            file_name, layout_front_matter, state, current_contents.strip(), level + 1
+            file_name, layout_front_matter, state, current_contents.strip(), level + 1, current_page_metadata
         )
 
     return current_contents
