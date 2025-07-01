@@ -256,13 +256,13 @@ def get_file_dependencies_and_evaluated_contents(
 
     parsed_content["url"] = f"{BASE_URL}/{file_name.replace(ROOT_DIR + '/posts/', '')}"
 
-    if parsed_content.get("permalink") and parsed_content["permalink"].startswith("/"):
+    if parsed_content.metadata.get("permalink") and parsed_content.metadata["permalink"].startswith("/"):
         parsed_content["has_user_assigned_permalink"] = True
-        parsed_content["url"] = f"{BASE_URL}/{parsed_content['permalink'].strip('/')}/"
+        parsed_content["permalink"] = f"/{parsed_content.metadata['permalink'].strip('/')}/"
 
     parsed_content[
         "permalink"
-    ] = f"/{parsed_content.get('permalink', parsed_content['slug']).strip('/')}/"
+    ] = f"/{parsed_content.metadata.get('permalink', parsed_content['slug']).strip('/')}/"
 
     if "categories" not in parsed_content:
         parsed_content["categories"] = []
@@ -283,7 +283,7 @@ def get_file_dependencies_and_evaluated_contents(
             parsed_content["post"]["date"] = datetime.datetime.strptime(
                 date_slug, "%Y-%m-%d"
             )
-            # if "hms" in psot metadata, add to post date
+            # if "hms" in post metadata, add to post date
             if parsed_content.get("hms") and parsed_content["hms"].count(":") == 2:
                 parsed_content["post"]["date"] = parsed_content["post"]["date"].replace(
                     hour=int(parsed_content["hms"].split(":")[0]),
@@ -479,9 +479,9 @@ def render_page(file: str, skip_hooks=False) -> None:
 
     page_state["page"] = all_parsed_pages[file].metadata
     page_state["post"] = all_parsed_pages[file].metadata
-
+    
     if not page_state["page"].get("permalink"):
-        page_state["page"]["permalink"] = slug  # .strip("/")
+        page_state["page"]["permalink"] = page_state.get("permalink", slug)  # .strip("/")
 
     page_state["page"]["generated_on"] = datetime.datetime.now()
 
@@ -1036,6 +1036,9 @@ def load_data_from_data_files(deps: list, data_file_integrity: dict) -> list:
                 loaded_contents["skip"] = data_dir in SITE_STATE.get(
                     "disable_collection_single_page_generation", {}
                 )
+                if "body" in loaded_contents:
+                    loaded_contents["content"] = loaded_contents["body"]
+                    del loaded_contents["body"]
                 all_opened_pages[path] = contents
                 all_page_contents[path] = loaded_contents
                 all_parsed_pages[path] = loaded_contents
@@ -1149,9 +1152,9 @@ def main(deps: list = [], watch: bool = False, incremental: bool = False) -> Non
                         slug = page.split(yyyy_mm_dd)[1].replace(".md", "")[1:]
                         yyyy_mm_dd_slug = f"{yyyy_mm_dd.replace('-', '/')}/{slug}"
 
-                    all_page_contents[page].metadata[
-                        "permalink"
-                    ] = f"/{yyyy_mm_dd_slug.strip('/')}/"
+                    # all_page_contents[page].metadata[
+                    #     "permalink"
+                    # ] = f"/{yyyy_mm_dd_slug.strip('/')}/"
 
                 all_page_contents[page].metadata["outgoing_links"] = page_links
         except Exception as e:

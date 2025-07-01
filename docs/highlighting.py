@@ -1,7 +1,7 @@
-from pygments import highlight
-from pygments.lexers import PythonLexer, HtmlLexer, CssLexer
-from pygments.formatters import HtmlFormatter
 from bs4 import BeautifulSoup
+from pygments import highlight
+from pygments.formatters import HtmlFormatter
+from pygments.lexers import CssLexer, HtmlLexer, PythonLexer
 
 languages = {
     "python": PythonLexer(),
