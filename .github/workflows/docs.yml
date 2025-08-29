@@ -33,7 +33,7 @@ jobs:
           cd docs
           aurora build
       - name: rsync deployments
-        uses: burnett01/rsync-deployments@7.0.2
+        uses: burnett01/rsync-deployments@7.1.0
         with:
           switches: -avzr
           path: "docs/_site/*"
