@@ -33,6 +33,7 @@ setuptools.setup(
         "tqdm",
         "python-dateutil",
         "chardet",
+        "bs4"
     ],
     include_package_data=True,
     package_data={"": ["templates/index.html"]},
