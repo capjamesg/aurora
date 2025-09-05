@@ -9,3 +9,4 @@ click
 orjson
 tqdm
 chardet
+bs4
